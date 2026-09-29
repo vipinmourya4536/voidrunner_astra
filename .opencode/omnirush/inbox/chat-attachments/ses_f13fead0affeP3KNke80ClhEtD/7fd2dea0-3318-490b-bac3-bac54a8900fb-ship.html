@@ -1,0 +1,3210 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Void Runner</title>
+    <style>
+        :root {
+            --bg-deep: #030305;
+            --text-main: #f3f4f6;
+            --accent-orange: #f97316;
+            --accent-blue: #0ea5e9;
+            --accent-green: #10b981;
+            --ui-border: rgba(255, 255, 255, 0.15);
+            --ui-bg: rgba(10, 10, 15, 0.85);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-deep);
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--text-main);
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud {
+            padding: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0px #000;
+            pointer-events: auto;
+        }
+
+        .hud span {
+            color: var(--accent-blue);
+        }
+
+        .hud-btn {
+            background: transparent;
+            border: 1px solid var(--ui-border);
+            color: #aaa;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .hud-btn:hover {
+            color: #fff;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 6px rgba(14, 165, 233, 0.5);
+        }
+
+        .hud-btn.ready {
+            border-color: #10b981;
+            color: #34d399;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+            animation: fieldPulse 1.5s ease-in-out infinite;
+        }
+
+        .hud-btn.active {
+            border-color: #10b981;
+            color: #fff;
+            background: rgba(16, 185, 129, 0.25);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+        }
+
+        .hud-btn.cooldown {
+            border-color: #374151;
+            color: #4b5563;
+            cursor: not-allowed;
+        }
+
+        @keyframes fieldPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 6px rgba(16, 185, 129, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 14px rgba(16, 185, 129, 0.7);
+            }
+        }
+
+        #nitro-wrapper {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            text-align: center;
+            letter-spacing: 2px;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        #nitro-bar-container {
+            margin-top: 5px;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--ui-border);
+            overflow: hidden;
+        }
+
+        #nitro-bar {
+            width: 100%;
+            height: 100%;
+            background: var(--accent-orange);
+            transition: width 0.1s linear, background 0.2s;
+        }
+
+        #menu,
+        #game-over,
+        #pause-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: auto;
+            background: var(--ui-bg);
+            padding: 40px;
+            border: 1px solid var(--ui-border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+            min-width: 440px;
+            backdrop-filter: blur(5px);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 5px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        h1 span {
+            color: var(--accent-orange);
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+
+        #ship-selector {
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .ship-btn {
+            background: transparent;
+            border: 1px solid var(--ui-border);
+            padding: 10px 12px;
+            color: #aaa;
+            cursor: pointer;
+            font-family: inherit;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .ship-btn:hover {
+            color: #fff;
+            border-color: #888;
+        }
+
+        .ship-btn.selected {
+            border-color: var(--accent-blue);
+            color: var(--text-main);
+            background: rgba(14, 165, 233, 0.15);
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.3);
+        }
+
+        #ship-desc {
+            font-size: 0.8rem;
+            color: var(--accent-green);
+            min-height: 40px;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            padding: 0 15px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 1rem;
+            background: var(--text-main);
+            color: var(--bg-deep);
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            font-family: inherit;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: var(--accent-blue);
+            color: #fff;
+            box-shadow: 0 0 15px var(--accent-blue);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .controls-hint {
+            margin-top: 25px;
+            font-size: 0.75rem;
+            color: #777;
+            line-height: 1.6;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border: 1px solid var(--ui-border);
+            margin: 20px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #shield-hud {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        #shield-icon {
+            font-size: 1.1rem;
+            color: #22d3ee;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+            animation: shieldPulseText 1.2s ease-in-out infinite;
+        }
+
+        #shield-label {
+            font-size: 0.7rem;
+            color: #06b6d4;
+            letter-spacing: 3px;
+            margin-top: 2px;
+        }
+
+        #shield-timer-bar-container {
+            margin-top: 4px;
+            width: 100%;
+            height: 4px;
+            background: rgba(6, 182, 212, 0.15);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            overflow: hidden;
+        }
+
+        #shield-timer-bar {
+            width: 100%;
+            height: 100%;
+            background: #22d3ee;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 6px rgba(34, 211, 238, 0.5);
+        }
+
+        @keyframes shieldPulseText {
+
+            0%,
+            100% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        #corridor-hud {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        #corridor-icon {
+            font-size: 1.1rem;
+            color: #34d399;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
+            animation: corridorPulseText 1.0s ease-in-out infinite;
+        }
+
+        #corridor-label {
+            font-size: 0.7rem;
+            color: #10b981;
+            letter-spacing: 3px;
+            margin-top: 2px;
+        }
+
+        #corridor-timer-bar-container {
+            margin-top: 4px;
+            width: 100%;
+            height: 4px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            overflow: hidden;
+        }
+
+        #corridor-timer-bar {
+            width: 100%;
+            height: 100%;
+            background: #34d399;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 6px rgba(52, 211, 153, 0.5);
+        }
+
+        @keyframes corridorPulseText {
+
+            0%,
+            100% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        #sector-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        #sector-overlay .sector-text {
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #f3f4f6;
+            text-shadow: 0 0 20px rgba(14, 165, 233, 0.5), 2px 2px 0px #000;
+        }
+
+        #sector-overlay .sector-sub {
+            font-size: 0.85rem;
+            color: #9ca3af;
+            letter-spacing: 4px;
+            margin-top: 5px;
+        }
+
+        .hud-sector {
+            font-size: 0.75rem;
+            color: #6b7280;
+            letter-spacing: 2px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-layer">
+            <div class="hud">
+                <div>
+                    Dist: <span id="score">0</span>m
+                    <div class="hud-sector">SECTOR <span id="sector-num">1</span></div>
+                </div>
+                <div>
+                    <button id="field-btn" class="hud-btn cooldown">Field [F]</button>
+                    <button id="pause-btn" class="hud-btn">Pause [P]</button>
+                </div>
+                <div>
+                    Best: <span id="highscore">0</span>m
+                    <button id="sound-btn" class="hud-btn">Sound: ON [M]</button>
+                </div>
+            </div>
+            <div id="nitro-wrapper">
+                THRUST CAPACITOR
+                <div id="nitro-bar-container">
+                    <div id="nitro-bar"></div>
+                </div>
+            </div>
+            <div id="shield-hud" class="hidden">
+                <div id="shield-icon">◆</div>
+                <div id="shield-label">SHIELD</div>
+                <div id="shield-timer-bar-container">
+                    <div id="shield-timer-bar"></div>
+                </div>
+            </div>
+            <div id="corridor-hud" class="hidden">
+                <div id="corridor-icon">◈</div>
+                <div id="corridor-label">CLEAR FIELD</div>
+                <div id="corridor-timer-bar-container">
+                    <div id="corridor-timer-bar"></div>
+                </div>
+            </div>
+            <div id="sector-overlay">
+                <div class="sector-text" id="sector-title">SECTOR 1</div>
+                <div class="sector-sub" id="sector-subtitle">DEEP VOID</div>
+            </div>
+            <div id="menu">
+                <h1>VOID<span>RUNNER</span></h1>
+                <p class="subtitle">TACTICAL ASTEROID EVASION</p>
+                <div id="ship-selector">
+                    <button class="ship-btn selected" onclick="selectShip(0)">Pioneer</button>
+                    <button class="ship-btn" onclick="selectShip(1)">Apex</button>
+                    <button class="ship-btn" onclick="selectShip(2)">Saucer</button>
+                    <button class="ship-btn" onclick="selectShip(3)">Titan</button>
+                </div>
+                <p id="ship-desc">STRIKE FIGHTER: Aggressive profile with dual wing engines. Reliable and punchy.</p>
+                <button class="btn" id="start-btn">Engage</button>
+                <div class="controls-hint">
+                    [SPACE / TAP LEFT] - Vertical Thrust<br>
+                    [SHIFT / TAP RIGHT] - Nitro Boost<br>
+                    [F] - Corridor Clear Field &nbsp; [P] - Pause<br>
+                    [M] - Toggle Sound
+                </div>
+            </div>
+            <div id="game-over" class="hidden">
+                <h1>HULL <span>BREACH</span></h1>
+                <p class="subtitle">CRITICAL FAILURE DETECTED</p>
+                <div class="stat-box">
+                    <span>DISTANCE CLEARED:</span>
+                    <span id="final-score" style="color: var(--accent-orange); font-weight: bold;">0m</span>
+                </div>
+                <div class="stat-box">
+                    <span>SECTOR REACHED:</span>
+                    <span id="final-sector" style="color: var(--accent-blue); font-weight: bold;">1</span>
+                </div>
+                <button class="btn" id="retry-btn">Re-Engage</button>
+            </div>
+            <div id="pause-overlay" class="hidden">
+                <h1>VOID<span>PAUSED</span></h1>
+                <p class="subtitle">Press [P] or RESUME to continue operations.</p>
+                <button class="btn" id="resume-btn">Resume</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const scoreEl = document.getElementById('score');
+        const highscoreEl = document.getElementById('highscore');
+        const finalScoreEl = document.getElementById('final-score');
+        const nitroBar = document.getElementById('nitro-bar');
+        const menuEl = document.getElementById('menu');
+        const gameOverScreen = document.getElementById('game-over');
+        const shipDescEl = document.getElementById('ship-desc');
+        const pauseOverlay = document.getElementById('pause-overlay');
+        const pauseBtn = document.getElementById('pause-btn');
+        const soundBtn = document.getElementById('sound-btn');
+        const fieldBtn = document.getElementById('field-btn');
+        const sectorNumEl = document.getElementById('sector-num');
+        const sectorOverlay = document.getElementById('sector-overlay');
+        const sectorTitle = document.getElementById('sector-title');
+        const sectorSubtitle = document.getElementById('sector-subtitle');
+        const finalSectorEl = document.getElementById('final-sector');
+
+        let gameState = 'MENU';
+        let distanceTraveled = 0, score = 0;
+        let highscore = localStorage.getItem('voidRunnerV7') || 0;
+        highscoreEl.innerText = highscore;
+
+        let lastTime = 0, worldSpeed = 2.5, speedMultiplier = 1;
+        let isNitro = false, nitroAmount = 100, selectedShipType = 0;
+        let isMuted = false;
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            if (soundBtn) soundBtn.textContent = isMuted ? 'Sound: OFF [M]' : 'Sound: ON [M]';
+            setBgMusicMuted(isMuted);
+        }
+
+        function togglePause() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                pauseOverlay.classList.remove('hidden');
+                setBgMusicPaused(true);
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                pauseOverlay.classList.add('hidden');
+                setBgMusicPaused(false);
+            }
+        }
+
+        const keys = {};
+        window.addEventListener('keydown', e => {
+            if (e.code === 'KeyP') {
+                if (gameState === 'PLAYING' || gameState === 'PAUSED') {
+                    e.preventDefault();
+                    togglePause();
+                }
+                return;
+            }
+            if (e.code === 'KeyM') {
+                e.preventDefault();
+                toggleMute();
+                return;
+            }
+            if (e.code === 'KeyF') {
+                e.preventDefault();
+                if (gameState === 'PLAYING') activateCorridorClear();
+                return;
+            }
+            keys[e.code] = true; initAudio();
+        });
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        let isTouching = false, touchX = 0;
+        window.addEventListener('mousedown', e => { if (e.target.tagName !== 'BUTTON') { isTouching = true; touchX = e.clientX; initAudio(); } });
+        window.addEventListener('mouseup', () => isTouching = false);
+        window.addEventListener('touchstart', e => { if (e.target.tagName !== 'BUTTON') { isTouching = true; touchX = e.touches[0].clientX; initAudio(); } }, { passive: false });
+        window.addEventListener('touchend', () => isTouching = false);
+
+        // ---- AUDIO ENGINE ----
+        let audioCtx = null;
+        const initAudio = () => { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); };
+
+        const playSound = (freq, type, duration, vol = 0.1) => {
+            if (!audioCtx || isMuted) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        };
+
+        const SHIP_SOUNDS = [
+            { freq: 240, range: 50, type: 'sine', dur: 0.07, vol: 0.025, rate: 6, freq2: 350, type2: 'sine' },
+            { freq: 420, range: 80, type: 'sawtooth', dur: 0.035, vol: 0.016, rate: 4, freq2: 630, type2: 'sawtooth' },
+            { freq: 130, range: 50, type: 'triangle', dur: 0.12, vol: 0.03, rate: 9, freq2: 195, type2: 'sine' },
+            { freq: 58, range: 18, type: 'square', dur: 0.09, vol: 0.03, rate: 3, freq2: 88, type2: 'square' }
+        ];
+
+        const NITRO_SOUNDS = [
+            { freq: 500, type: 'sine', dur: 0.04, vol: 0.015 },
+            { freq: 800, type: 'sawtooth', dur: 0.03, vol: 0.012 },
+            { freq: 250, type: 'triangle', dur: 0.06, vol: 0.02 },
+            { freq: 120, type: 'square', dur: 0.05, vol: 0.02 }
+        ];
+
+        function playShipThrust() {
+            const sc = SHIP_SOUNDS[selectedShipType];
+            playSound(sc.freq + Math.random() * sc.range, sc.type, sc.dur, sc.vol);
+            if (Math.random() > 0.55) {
+                playSound(sc.freq2 + Math.random() * sc.range * 0.4, sc.type2, sc.dur * 0.6, sc.vol * 0.35);
+            }
+        }
+
+        function playNitroSound() {
+            const ns = NITRO_SOUNDS[selectedShipType];
+            playSound(ns.freq + Math.random() * 60, ns.type, ns.dur, ns.vol);
+        }
+
+        // ---- PIXEL ART PALETTE ----
+        const P = {
+            W: '#ffffff', w: '#e5e7eb', L: '#d1d5db', l: '#b0b3b8',
+            G: '#9ca3af', g: '#6b7280', D: '#4b5563', d: '#374151',
+            X: '#1f2937', x: '#111827', K: '#030712', k: '#0a0e18',
+            B: '#2563eb', b: '#3b82f6', I: '#60a5fa', i: '#93c5fd', C: '#06b6d4', c: '#22d3ee',
+            O: '#ea580c', o: '#f97316', R: '#ef4444', r: '#f87171',
+            Y: '#eab308', y: '#facc15', P: '#fef08a',
+            E: '#10b981', e: '#34d399',
+            T: '#0f172a', V: '#7c3aed', v: '#a78bfa',
+            _: null
+        };
+
+        const parseShipDesign = (designStrings, pixelSize) => {
+            const pixels = [];
+            const maxW = Math.max(...designStrings.map(s => s.length));
+            const width = maxW * pixelSize;
+            const height = designStrings.length * pixelSize;
+            for (let y = 0; y < designStrings.length; y++) {
+                for (let x = 0; x < designStrings[y].length; x++) {
+                    const ch = designStrings[y][x];
+                    if (ch !== '_' && ch !== ' ' && P[ch] !== undefined && P[ch] !== null) {
+                        pixels.push({ x: x * pixelSize - width / 2, y: y * pixelSize - height / 2, c: P[ch] });
+                    }
+                }
+            }
+            return { pixels, w: width, h: height, ps: pixelSize };
+        };
+
+        const SHIP_TYPES = [
+            {
+                name: 'PIONEER',
+                desc: 'STRIKE FIGHTER: Aggressive profile with dual wing engines. Reliable and punchy.',
+                gravity: 0.21, thrust: -0.44, maxSpeed: 6.5, worldSpeedMod: 1.0,
+                dampening: 0.978, thrustParticles: 3,
+                exhaustMulti: [{ xOff: -0.50, yOff: -0.32 }, { xOff: -0.50, yOff: 0.32 }],
+                exhaustColor: '#f97316', exhaustColorNitro: '#60a5fa',
+                tiltRange: 0.35, tiltSpeed: 0.045,
+                design: parseShipDesign([
+                    "__________KKKK______________", "_________KIiBBK_____________",
+                    "________KIiTTBlK____________", "_______KGlBBWWWlKK__________",
+                    "______KDGlWWWWWWWWlKK_______", "_KK__KDDGllWWWWWWWWWWlK_____",
+                    "KoRKKDDDGlWWWWWWWWWWWWWlK___", "KRYRKXDDGlWWWWWWWWWWWWWWlK__",
+                    "KoRKKXDDDDDDDDDDDDDDDDDDDloK", "KKKKXXDDDDDcCcDDcCcDDDDDDDoK",
+                    "KoRKKXDDDDDDDDDDDDDDDDDDDloK", "KRYRKXDDGlWWWWWWWWWWWWWWlK__",
+                    "KoRKKDDDGlWWWWWWWWWWWWWlK___", "_KK__KDDGllWWWWWWWWWWlK_____",
+                    "______KDGlWWWWWWWWlKK_______", "_______KGlBBWWWlKK__________",
+                    "________KIiTTBlK____________", "_________KIiBBK_____________",
+                    "__________KKKK______________",
+                ], 2.5)
+            },
+            {
+                name: 'APEX',
+                desc: 'INTERCEPTOR: Needle-nose design with massive engine pods. Blazing fast, for aces only.',
+                gravity: 0.27, thrust: -0.56, maxSpeed: 8.0, worldSpeedMod: 1.25,
+                dampening: 0.955, thrustParticles: 4,
+                exhaustMulti: [{ xOff: -0.44, yOff: -0.38 }, { xOff: -0.44, yOff: 0.38 }],
+                exhaustColor: '#ef4444', exhaustColorNitro: '#c084fc',
+                tiltRange: 0.50, tiltSpeed: 0.07,
+                design: parseShipDesign([
+                    "_________________________KKK", "________________________KrrRK",
+                    "_______________________KrWWrK", "______________________KDlWWlDK",
+                    "_____________________KDlWBWlDK", "____________________KGlWBTBlGK",
+                    "___________________KGGllBBllGGK", "__________________KDGGGGGGGGGDdK",
+                    "_________________KDDDDDDDDDDDDDdK", "____KK__________KXDDDDDDDDDDDDDoK",
+                    "___KRRK________KXXDDDDDDDDDDDDDoK", "__KRrYrK______KXXDDDDDDDDDDDDDDoK",
+                    "_KRYPPYrK____KXXDDDDDDDDDDDDDDDoK", "__KRrYrK______KXXDDDDDDDDDDDDDDoK",
+                    "___KRRK________KXXDDDDDDDDDDDDDoK", "____KK__________KXDDDDDDDDDDDDDoK",
+                    "_________________KDDDDDDDDDDDDDdK", "__________________KDGGGGGGGGGDdK",
+                    "___________________KGGllBBllGGK", "____________________KGlWBTBlGK",
+                    "_____________________KDlWBWlDK", "______________________KDlWWlDK",
+                    "_______________________KrWWrK", "________________________KrrRK",
+                    "_________________________KKK",
+                ], 1.8)
+            },
+            {
+                name: 'SAUCER',
+                desc: 'ANTI-GRAV: Fluid and bouncy. Floats like a dream with smooth oscillating thrust.',
+                gravity: 0.10, thrust: -0.22, maxSpeed: 4.5, worldSpeedMod: 0.95,
+                dampening: 0.985, thrustParticles: 2,
+                exhaustMulti: [{ xOff: -0.15, yOff: 0.45 }, { xOff: 0.15, yOff: 0.45 }],
+                exhaustColor: '#eab308', exhaustColorNitro: '#22d3ee',
+                tiltRange: 0.06, tiltSpeed: 0.012, bounce: true,
+                design: parseShipDesign([
+                    "________________KKKKKKKKKK________________", "______________KKIiiiiiiiiiIKK______________",
+                    "____________KKIiiBBBBBBBBiiIKK____________", "___________KIiiBBBBBBBBBBBBiiIK___________",
+                    "__________KIiiBBBTTTTTTBBBBBiiIK__________", "_________KIiiBBBTTTTTTTTBBBBBiiIK_________",
+                    "________KIiiBBBBTTTTTTTBBBBBBBiiIK________", "_______KIiiiBBBBBBBBBBBBBBBBBBBiiiIK______",
+                    "______KKllllllllllllllllllllllllllllKK_____", "_____KGlLLLLLLLLLLLLLLLLLLLLLLLLLLlGK____",
+                    "___KKGlLLLLLLLLLLLLLLLLLLLLLLLLLLLLlGKK__", "__KGGlLLELLoLLCLLGLLELLoLLCLLGLLELLLlGGK_",
+                    "_KDGGlllllllllllllllllllllllllllllllllGGDK_", "KXDDGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGDDXK__",
+                    "KXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDXxK", "_KXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDXxK_",
+                    "__KXXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDXXxK__", "___KKXXXDDDDDDDDDDDDDDDDDDDDDDDDDDXXXKK___",
+                    "_____KKXXXXXXDDDDDDDDDDDDDDDDXXXXXxKK_____", "_______KKKXXXXXXXXXXXXXXXXXXXXxKKK_______",
+                    "_________KKKyYYoOOoOOoOOoYYyKKK___________", "___________KKyYYoOOoOOoYYyKK______________",
+                    "_____________KKyYYYYYYYyKK________________", "_______________KKyyyyyyKK_________________",
+                    "_________________KKKKKK___________________",
+                ], 1.8)
+            },
+            {
+                name: 'TITAN',
+                desc: 'DREADNOUGHT: Colossal hull, crushing weight. Like piloting a mountain through space.',
+                gravity: 0.40, thrust: -0.72, maxSpeed: 9.0, worldSpeedMod: 0.65,
+                dampening: 0.96, thrustParticles: 6,
+                exhaustMulti: [
+                    { xOff: -0.42, yOff: -0.28 }, { xOff: -0.42, yOff: -0.09 },
+                    { xOff: -0.42, yOff: 0.09 }, { xOff: -0.42, yOff: 0.28 }
+                ],
+                exhaustColor: '#0ea5e9', exhaustColorNitro: '#f97316',
+                tiltRange: 0.08, tiltSpeed: 0.008,
+                design: parseShipDesign([
+                    "____________________KKKKKKKKKK___________________", "___________________KDDDDDDDDDDdK__________________",
+                    "__________________KDDDDDDDDDDDDDdK_________________", "_________________KDDGGGGGGGGGGGDDdK________________",
+                    "________________KDGGllllllllllllGGDdK_______________", "_______________KDGlWWWWWWWWWWWWWWlGDdK______________",
+                    "______________KDGlWWWWWWWWWWWWWWWWlGDdK_____________", "_____________KDGlWWWWWBBBBBBBWWWWWWlGDdK____________",
+                    "____________KDGlWWWWWBTTTTTTTBWWWWWWlGDdK___________", "___________KDGlWWWWWWBTTTTTTTBWWWWWWWlGDdK__________",
+                    "__________KDGlWWWWWWWBBBBBBBBWWWWWWWWWlGDdK_________", "_________KDGGlWWWWWWWWWWWWWWWWWWWWWWWWlGGDdK________",
+                    "________KDGGllllllllllllllllllllllllllllGGDdK_______", "_______KDDGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGDDdK______",
+                    "______KXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDdK_____", "_____KXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDdK____",
+                    "____KXDDlCClDDlCClDDlCClDDlCClDDlCClDDlCClDDdK___", "___KXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDdK__",
+                    "_KKKKXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDoK_", "KcCcKXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDoK_",
+                    "KCIICKXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDoK", "KIiiIKXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDoK",
+                    "KIiiIKXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDoK", "KCIICKXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDoK",
+                    "KcCcKXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDoK_", "_KKKKXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDoK_",
+                    "___KXXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDdK__", "____KXDDlCClDDlCClDDlCClDDlCClDDlCClDDlCClDDdK___",
+                    "_____KXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDdK____", "______KXDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDdK_____",
+                    "_______KDDGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGDDdK______", "________KDGGllllllllllllllllllllllllllllGGDdK_______",
+                    "_________KDGGlWWWWWWWWWWWWWWWWWWWWWWWWlGGDdK________", "__________KDGlWWWWWWWWWWWWWWWWWWWWWWWWlGDdK_________",
+                    "___________KDGlWWWWWWBBBBBBBWWWWWWWWlGDdK__________", "____________KDGlWWWWBTTTTTTTBWWWWWlGDdK_____________",
+                    "_____________KDGlWWWBTTTTTTTBWWWWlGDdK______________", "______________KDGGlWWBBBBBBBWWWlGGDdK_______________",
+                    "_______________KDGGllllllllllllGGDdK________________", "________________KDDGGGGGGGGGGGDDdK_________________",
+                    "_________________KDDDDDDDDDDDDDdK__________________", "__________________KKKKKKKKKKKKKKK___________________",
+                ], 1.6)
+            }
+        ];
+
+        window.selectShip = function (type) {
+            selectedShipType = type;
+            document.querySelectorAll('.ship-btn').forEach((btn, idx) => btn.classList.toggle('selected', idx === type));
+            shipDescEl.innerText = SHIP_TYPES[type].desc;
+        };
+
+        // ---- SHIP CONTROLLER ----
+        const ship = {
+            x: window.innerWidth < 768 ? 90 : 160,
+            y: canvas.height / 2,
+            vy: 0, rotation: 0, bobPhase: 0, trailTimer: 0,
+
+            update() {
+                const config = SHIP_TYPES[selectedShipType];
+                this.w = config.design.w * 0.75;
+                this.h = config.design.h * 0.75;
+
+                let inputActive = keys['Space'] || (isTouching && touchX < window.innerWidth * 0.5);
+                isNitro = (keys['ShiftLeft'] || keys['ShiftRight'] || (isTouching && touchX >= window.innerWidth * 0.5)) && nitroAmount > 0;
+
+                // Ion storm modifier
+                let thrustMod = 1.0;
+                let invertControls = false;
+                if (effects.ionActive) {
+                    if (effects.ionEffectType === 'reducedThrust') thrustMod = 0.7;
+                    else if (effects.ionEffectType === 'invert') invertControls = true;
+                }
+
+                const effectiveThrust = invertControls ? -config.thrust : config.thrust;
+
+                if (inputActive) {
+                    this.vy += effectiveThrust * thrustMod;
+                    const exColor = isNitro ? config.exhaustColorNitro : config.exhaustColor;
+                    for (const ep of config.exhaustMulti) {
+                        createParticles(this.x + ep.xOff * this.w, this.y + ep.yOff * this.h, exColor, config.thrustParticles);
+                    }
+                    this.trailTimer++;
+                    const sc = SHIP_SOUNDS[selectedShipType];
+                    if (this.trailTimer % sc.rate === 0) playShipThrust();
+                }
+
+                if (isNitro) {
+                    speedMultiplier = 2.0;
+                    nitroAmount -= 0.6;
+                    this.vy *= 0.85;
+                    nitroBar.style.background = '#0ea5e9';
+                    if (this.trailTimer % 12 === 0) playNitroSound();
+                } else {
+                    speedMultiplier = 1;
+                    if (nitroAmount < 100) nitroAmount += 0.15;
+                    nitroBar.style.background = '#f97316';
+                }
+
+                this.vy += config.gravity;
+                this.vy *= config.dampening;
+                if (this.vy > config.maxSpeed) this.vy = config.maxSpeed;
+                if (this.vy < -config.maxSpeed) this.vy = -config.maxSpeed;
+                this.y += this.vy;
+
+                if (selectedShipType === 2) {
+                    this.bobPhase += 0.04;
+                    if (!inputActive && Math.abs(this.vy) < 1.5) this.y += Math.sin(this.bobPhase) * 0.3;
+                }
+
+                const targetRot = Math.max(-config.tiltRange, Math.min(config.tiltRange, this.vy * config.tiltSpeed));
+                this.rotation += (targetRot - this.rotation) * 0.15;
+
+                if (this.y < this.h * 0.3) {
+                    if (config.bounce) { this.y = this.h * 0.3; this.vy = Math.abs(this.vy) * 0.5; }
+                    else { this.y = this.h * 0.3; this.vy = 0; }
+                }
+                if (this.y > canvas.height) triggerGameOver();
+                nitroBar.style.width = `${Math.max(0, nitroAmount)}%`;
+            },
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                const design = SHIP_TYPES[selectedShipType].design;
+                const ps = design.ps;
+                for (let i = 0; i < design.pixels.length; i++) {
+                    ctx.fillStyle = design.pixels[i].c;
+                    ctx.fillRect(design.pixels[i].x, design.pixels[i].y, ps, ps);
+                }
+                ctx.restore();
+
+                if (gameState === 'PLAYING') {
+                    const config = SHIP_TYPES[selectedShipType];
+                    const inputActive = keys['Space'] || (isTouching && touchX < window.innerWidth * 0.5);
+                    if (inputActive) {
+                        ctx.save();
+                        const glowColor = isNitro ? config.exhaustColorNitro : config.exhaustColor;
+                        for (const ep of config.exhaustMulti) {
+                            const gx = this.x + ep.xOff * this.w - 5;
+                            const gy = this.y + ep.yOff * this.h;
+                            const glowR = 16 + Math.random() * 10;
+                            const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, glowR);
+                            grad.addColorStop(0, glowColor + '77');
+                            grad.addColorStop(1, glowColor + '00');
+                            ctx.fillStyle = grad;
+                            ctx.fillRect(gx - glowR, gy - glowR, glowR * 2, glowR * 2);
+                        }
+                        ctx.restore();
+                    }
+                }
+            }
+        };
+
+        // ---- PARTICLES ----
+        const particles = [];
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x, y, vx: -Math.random() * 5 - 2, vy: (Math.random() - 0.5) * 2.5,
+                    size: Math.random() * 3 + 1.5, life: 1.0, color
+                });
+            }
+        }
+        function createExplosion(x, y, count) {
+            const colors = ['#ef4444', '#f97316', '#eab308', '#fef08a', '#ffffff'];
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 7 + 2;
+                particles.push({
+                    x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    size: Math.random() * 5 + 2, life: 1.0, color: colors[Math.floor(Math.random() * colors.length)]
+                });
+            }
+        }
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx * speedMultiplier; p.y += p.vy;
+                p.life -= 0.04; p.size *= 0.98;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        // =====================================================
+        // EFFECTS STATE — CENTRALIZED
+        // =====================================================
+        const effects = {
+            // Shield
+            shield: false,
+            shieldTimer: 0,
+            shieldFlashTimer: 0,
+            shieldMaxTime: 600,
+            // Corridor Clear Field
+            corridorReady: false,
+            corridorClear: false,
+            corridorTimer: 0,
+            corridorMaxTime: 600,
+            corridorCooldown: 0,
+            corridorCooldownMax: 1200,
+            // Ion storm
+            ionActive: false,
+            ionEffectType: 'reducedThrust'
+        };
+
+        const shieldHud = document.getElementById('shield-hud');
+        const shieldTimerBar = document.getElementById('shield-timer-bar');
+        const corridorHud = document.getElementById('corridor-hud');
+        const corridorTimerBar = document.getElementById('corridor-timer-bar');
+
+        // =====================================================
+        // SECTOR SYSTEM
+        // =====================================================
+        let currentSector = 1;
+        let lastSector = 0;
+        let sectorTransitionTimer = 0;
+        const SECTOR_DISTANCE = 500;
+
+        const SECTOR_NAMES = [
+            'DEEP VOID', 'ASTEROID BELT', 'DARK NEBULA', 'ION CORRIDOR',
+            'CRYSTAL FIELD', 'DEAD ZONE', 'PLASMA STREAM', 'WARP SHADOW',
+            'GRAVITY WELL', 'SINGULARITY'
+        ];
+
+        // =====================================================
+        // BIOME SYSTEM
+        // =====================================================
+        const BIOMES = [
+            {
+                name: 'DEEP VOID',
+                sectors: [1, 2],
+                accent: '#0ea5e9',
+                skyTop: '#020305',
+                skyBottom: '#040810',
+                starColors: ['#ffffff', '#d1d5db', '#93c5fd', '#60a5fa', '#e0f2fe'],
+                nebula: [],
+                minerals: ['#3a3b42', '#4a4d55', '#2a2b30', '#33343a'],
+                parallax: 'void',
+                music: 0
+            },
+            {
+                name: 'NEBULA DRIFT',
+                sectors: [3, 4],
+                accent: '#a78bfa',
+                skyTop: '#0d0518',
+                skyBottom: '#1a0a2e',
+                starColors: ['#e9d5ff', '#c4b5fd', '#f0abfc', '#ffffff', '#ddd6fe'],
+                nebula: [
+                    { x: 0.3, y: 0.3, rx: 0.45, ry: 0.35, color: 'rgba(124,58,237,0.07)' },
+                    { x: 0.75, y: 0.6, rx: 0.35, ry: 0.30, color: 'rgba(192,38,211,0.06)' },
+                    { x: 0.1, y: 0.7, rx: 0.30, ry: 0.25, color: 'rgba(109,40,217,0.05)' }
+                ],
+                minerals: ['#4c1d95', '#5b21b6', '#6d28d9', '#7c3aed', '#4a1942'],
+                parallax: 'nebula',
+                music: 1
+            },
+            {
+                name: 'ION STORM',
+                sectors: [5, 6],
+                accent: '#f97316',
+                skyTop: '#180800',
+                skyBottom: '#2a1000',
+                starColors: ['#fed7aa', '#fb923c', '#fbbf24', '#ffffff', '#fca5a5'],
+                nebula: [
+                    { x: 0.5, y: 0.2, rx: 0.7, ry: 0.25, color: 'rgba(234,88,12,0.06)' },
+                    { x: 0.2, y: 0.8, rx: 0.5, ry: 0.20, color: 'rgba(220,38,38,0.05)' }
+                ],
+                minerals: ['#7c2d12', '#9a3412', '#dc2626', '#b45309', '#92400e'],
+                parallax: 'storm',
+                music: 2
+            },
+            {
+                name: 'CRYSTAL EXPANSE',
+                sectors: [7, 8],
+                accent: '#22d3ee',
+                skyTop: '#011820',
+                skyBottom: '#012830',
+                starColors: ['#a5f3fc', '#67e8f9', '#22d3ee', '#ffffff', '#e0f2fe'],
+                nebula: [
+                    { x: 0.4, y: 0.4, rx: 0.55, ry: 0.40, color: 'rgba(6,182,212,0.06)' },
+                    { x: 0.8, y: 0.2, rx: 0.30, ry: 0.25, color: 'rgba(20,184,166,0.05)' },
+                    { x: 0.1, y: 0.6, rx: 0.25, ry: 0.20, color: 'rgba(6,182,212,0.04)' }
+                ],
+                minerals: ['#164e63', '#0e7490', '#0891b2', '#06b6d4', '#155e75'],
+                parallax: 'crystal',
+                music: 3
+            },
+            {
+                name: 'SINGULARITY',
+                sectors: [9, 10],
+                accent: '#e879f9',
+                skyTop: '#0a0010',
+                skyBottom: '#120018',
+                starColors: ['#f0abfc', '#e879f9', '#d946ef', '#fdf4ff', '#a21caf'],
+                nebula: [
+                    { x: 0.5, y: 0.5, rx: 0.80, ry: 0.70, color: 'rgba(168,85,247,0.04)' },
+                    { x: 0.5, y: 0.5, rx: 0.40, ry: 0.35, color: 'rgba(217,70,239,0.06)' }
+                ],
+                minerals: ['#581c87', '#6b21a8', '#7e22ce', '#9333ea', '#3b0764'],
+                parallax: 'singularity',
+                music: 4
+            },
+            {
+                name: 'GRAVITY TIDE',
+                sectors: [11, 12],
+                accent: '#38bdf8',
+                skyTop: '#010a1a',
+                skyBottom: '#020d22',
+                starColors: ['#ffffff', '#bae6fd', '#7dd3fc', '#e0f2fe', '#0ea5e9'],
+                nebula: [
+                    { x: 0.5, y: 0.3, rx: 0.80, ry: 0.50, color: 'rgba(14,165,233,0.05)' },
+                    { x: 0.2, y: 0.7, rx: 0.40, ry: 0.30, color: 'rgba(6,182,212,0.04)' }
+                ],
+                minerals: ['#075985', '#0369a1', '#0284c7', '#0ea5e9', '#164e63'],
+                parallax: 'gravity',
+                music: 5
+            },
+            {
+                name: 'DERELICT BELT',
+                sectors: [13, 14],
+                accent: '#94a3b8',
+                skyTop: '#080c10',
+                skyBottom: '#0f1318',
+                starColors: ['#e2e8f0', '#94a3b8', '#cbd5e1', '#ffffff', '#64748b'],
+                nebula: [
+                    { x: 0.3, y: 0.5, rx: 0.50, ry: 0.35, color: 'rgba(100,116,139,0.06)' },
+                    { x: 0.7, y: 0.3, rx: 0.35, ry: 0.25, color: 'rgba(71,85,105,0.05)' }
+                ],
+                minerals: ['#334155', '#475569', '#64748b', '#1e293b', '#0f172a'],
+                parallax: 'derelict',
+                music: 6
+            },
+            {
+                name: 'PLASMA RIFT',
+                sectors: [15, 16],
+                accent: '#06b6d4',
+                skyTop: '#000d0d',
+                skyBottom: '#001214',
+                starColors: ['#a5f3fc', '#67e8f9', '#cffafe', '#ffffff', '#00ffff'],
+                nebula: [
+                    { x: 0.4, y: 0.3, rx: 0.60, ry: 0.20, color: 'rgba(6,182,212,0.08)' },
+                    { x: 0.7, y: 0.7, rx: 0.40, ry: 0.15, color: 'rgba(34,211,238,0.06)' }
+                ],
+                minerals: ['#0e7490', '#0891b2', '#06b6d4', '#22d3ee', '#042f2e'],
+                parallax: 'plasma',
+                music: 7
+            },
+            {
+                name: 'FRACTURE REALM',
+                sectors: [17, 18],
+                accent: '#818cf8',
+                skyTop: '#0c090f',
+                skyBottom: '#060408',
+                starColors: ['#c7d2fe', '#818cf8', '#a5b4fc', '#e0e7ff', '#4f46e5'],
+                nebula: [
+                    { x: 0.5, y: 0.25, rx: 0.70, ry: 0.20, color: 'rgba(99,102,241,0.06)' },
+                    { x: 0.5, y: 0.75, rx: 0.70, ry: 0.20, color: 'rgba(129,140,248,0.05)' }
+                ],
+                minerals: ['#312e81', '#3730a3', '#4338ca', '#4f46e5', '#1e1b4b'],
+                parallax: 'fracture',
+                music: 8
+            },
+            {
+                name: 'METEOR CASCADE',
+                sectors: [19, 20],
+                accent: '#fb923c',
+                skyTop: '#1a0800',
+                skyBottom: '#2a0d00',
+                starColors: ['#fdba74', '#fb923c', '#fcd34d', '#ffffff', '#fef3c7'],
+                nebula: [
+                    { x: 0.6, y: 0.4, rx: 0.65, ry: 0.30, color: 'rgba(234,88,12,0.07)' },
+                    { x: 0.2, y: 0.6, rx: 0.40, ry: 0.25, color: 'rgba(220,38,38,0.05)' }
+                ],
+                minerals: ['#92400e', '#b45309', '#c2410c', '#d97706', '#78350f'],
+                parallax: 'meteor',
+                music: 9
+            },
+            {
+                name: 'EVENT HORIZON',
+                sectors: [21, 22],
+                accent: '#a855f7',
+                skyTop: '#000000',
+                skyBottom: '#050005',
+                starColors: ['#e9d5ff', '#c084fc', '#a855f7', '#fdf4ff', '#7c3aed'],
+                nebula: [
+                    { x: 0.5, y: 0.5, rx: 0.90, ry: 0.70, color: 'rgba(168,85,247,0.03)' },
+                    { x: 0.5, y: 0.5, rx: 0.45, ry: 0.35, color: 'rgba(192,132,252,0.05)' }
+                ],
+                minerals: ['#4c1d95', '#5b21b6', '#6d28d9', '#7c3aed', '#2e1065'],
+                parallax: 'horizon',
+                music: 10
+            },
+            {
+                name: 'COSMIC STORM',
+                sectors: [23, 24],
+                accent: '#f472b6',
+                skyTop: '#0a0a1a',
+                skyBottom: '#1a0a1a',
+                starColors: ['#f9a8d4', '#86efac', '#7dd3fc', '#fcd34d', '#c4b5fd'],
+                nebula: [
+                    { x: 0.3, y: 0.4, rx: 0.50, ry: 0.40, color: 'rgba(244,114,182,0.05)' },
+                    { x: 0.7, y: 0.6, rx: 0.45, ry: 0.35, color: 'rgba(134,239,172,0.04)' },
+                    { x: 0.5, y: 0.2, rx: 0.40, ry: 0.25, color: 'rgba(125,211,252,0.04)' }
+                ],
+                minerals: ['#be185d', '#9d174d', '#831843', '#ec4899', '#500724'],
+                parallax: 'cosmic',
+                music: 11
+            },
+            {
+                name: 'VOID ASCENSION',
+                sectors: [25, 999],
+                accent: '#f8fafc',
+                skyTop: '#000000',
+                skyBottom: '#000000',
+                starColors: ['#ffffff', '#f8fafc', '#e2e8f0', '#94a3b8', '#f8fafc'],
+                nebula: [],
+                minerals: ['#1e293b', '#334155', '#475569', '#0f172a', '#020617'],
+                parallax: 'ascension',
+                music: 12
+            }
+        ];
+
+        function getBiomeIndex(sector) {
+            for (let i = 0; i < BIOMES.length; i++) {
+                if (sector >= BIOMES[i].sectors[0] && sector <= BIOMES[i].sectors[1]) return i;
+            }
+            return BIOMES.length - 1;
+        }
+
+        let currentBiomeIdx = 0;
+        let prevBiomeIdx = 0;
+        let biomeTransitionProgress = 1.0; // 1 = fully in current biome
+        const BIOME_TRANSITION_SPEED = 1 / 120;
+
+        // Nebula drift state
+        const nebulaDriftPhase = { x: 0, y: 0 };
+
+        // Crystal shards for Crystal Expanse parallax
+        const crystalShards = [];
+        for (let i = 0; i < 18; i++) {
+            crystalShards.push({
+                x: Math.random(), y: Math.random() * canvas.height,
+                size: 8 + Math.random() * 16,
+                speed: 0.08 + Math.random() * 0.12,
+                angle: Math.random() * Math.PI,
+                opacity: 0.2 + Math.random() * 0.3
+            });
+        }
+
+        // Lightning streaks for Ion Storm
+        const lightningStreaks = [];
+        let lightningTimer = 0;
+
+        function lerpColor(a, b, t) {
+            const pa = a.match(/\d+/g).map(Number);
+            const pb = b.match(/\d+/g).map(Number);
+            return `rgb(${Math.round(pa[0] + (pb[0] - pa[0]) * t)},${Math.round(pa[1] + (pb[1] - pa[1]) * t)},${Math.round(pa[2] + (pb[2] - pa[2]) * t)})`;
+        }
+
+        function hexToRgb(hex) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgb(${r},${g},${b})`;
+        }
+
+        function getSectorDensityMod() {
+            return 1 + (currentSector - 1) * 0.12;
+        }
+
+        function getSectorSpawnReduction() {
+            return Math.max(0.6, 1 - (currentSector - 1) * 0.05);
+        }
+
+        function updateSector() {
+            currentSector = Math.floor(distanceTraveled / SECTOR_DISTANCE) + 1;
+            sectorNumEl.innerText = currentSector;
+
+            const newBiomeIdx = getBiomeIndex(currentSector);
+            if (newBiomeIdx !== currentBiomeIdx) {
+                prevBiomeIdx = currentBiomeIdx;
+                currentBiomeIdx = newBiomeIdx;
+                biomeTransitionProgress = 0;
+                // Retint stars
+                const biome = BIOMES[currentBiomeIdx];
+                stars.forEach(s => {
+                    s.color = biome.starColors[Math.floor(Math.random() * biome.starColors.length)];
+                });
+                // Switch music
+                playBiomeMusic(currentBiomeIdx);
+            }
+            if (biomeTransitionProgress < 1) biomeTransitionProgress = Math.min(1, biomeTransitionProgress + BIOME_TRANSITION_SPEED);
+
+            if (currentSector !== lastSector) {
+                lastSector = currentSector;
+                sectorTransitionTimer = 120;
+
+                const biome = BIOMES[getBiomeIndex(currentSector)];
+                sectorTitle.textContent = 'SECTOR ' + currentSector;
+                sectorSubtitle.textContent = biome.name;
+                sectorOverlay.style.opacity = '1';
+                sectorTitle.style.textShadow = `0 0 20px ${biome.accent}88, 2px 2px 0px #000`;
+
+                // Sector transition sounds
+                playSound(300 + currentSector * 50, 'sine', 0.3, 0.06);
+                playSound(450 + currentSector * 30, 'triangle', 0.2, 0.04);
+            }
+
+            if (sectorTransitionTimer > 0) {
+                sectorTransitionTimer--;
+                if (sectorTransitionTimer <= 0) sectorOverlay.style.opacity = '0';
+            }
+        }
+
+        // =====================================================
+        // HAZARD SYSTEM — Laser Connectors, Rotating Arms, Ion Zones
+        // =====================================================
+        const laserConnectors = [];
+        const ionZones = [];
+
+        // ---- LASER CONNECTOR ----
+        function spawnLaserConnector(rockA, rockB) {
+            laserConnectors.push({
+                rockA, rockB,
+                thickness: 2,
+                pulsePhase: Math.random() * Math.PI * 2
+            });
+        }
+
+        function updateLaserConnectors() {
+            const config = SHIP_TYPES[selectedShipType];
+            const actualWorldSpeed = worldSpeed * speedMultiplier * config.worldSpeedMod;
+
+            for (let i = laserConnectors.length - 1; i >= 0; i--) {
+                const lc = laserConnectors[i];
+                lc.pulsePhase += 0.08;
+
+                // Remove if either rock is gone
+                if (!asteroids.includes(lc.rockA) || !asteroids.includes(lc.rockB)) {
+                    laserConnectors.splice(i, 1);
+                    continue;
+                }
+
+                // Remove if both off-screen
+                if (lc.rockA.x < -150 && lc.rockB.x < -150) {
+                    laserConnectors.splice(i, 1);
+                    continue;
+                }
+
+                // Ship collision with laser line
+                const dist = pointToSegmentDist(ship.x, ship.y, lc.rockA.x, lc.rockA.y, lc.rockB.x, lc.rockB.y);
+                if (dist < 12) {
+                    if (effects.shield) {
+                        triggerShieldBreak((lc.rockA.x + lc.rockB.x) / 2, (lc.rockA.y + lc.rockB.y) / 2);
+                        laserConnectors.splice(i, 1);
+                    } else {
+                        triggerGameOver();
+                    }
+                }
+            }
+        }
+
+        function drawLaserConnectors() {
+            laserConnectors.forEach(lc => {
+                if (!asteroids.includes(lc.rockA) || !asteroids.includes(lc.rockB)) return;
+
+                const ax = lc.rockA.x, ay = lc.rockA.y;
+                const bx = lc.rockB.x, by = lc.rockB.y;
+                const pulseAlpha = 0.4 + 0.3 * Math.sin(lc.pulsePhase);
+                const pulseWidth = lc.thickness + Math.sin(lc.pulsePhase * 1.5) * 1;
+
+                ctx.save();
+
+                // Outer glow
+                ctx.globalAlpha = pulseAlpha * 0.3;
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = pulseWidth + 6;
+                ctx.beginPath();
+                ctx.moveTo(ax, ay);
+                ctx.lineTo(bx, by);
+                ctx.stroke();
+
+                // Mid glow
+                ctx.globalAlpha = pulseAlpha * 0.6;
+                ctx.strokeStyle = '#f87171';
+                ctx.lineWidth = pulseWidth + 2;
+                ctx.beginPath();
+                ctx.moveTo(ax, ay);
+                ctx.lineTo(bx, by);
+                ctx.stroke();
+
+                // Core beam
+                ctx.globalAlpha = pulseAlpha + 0.2;
+                ctx.strokeStyle = '#fecaca';
+                ctx.lineWidth = pulseWidth;
+                ctx.beginPath();
+                ctx.moveTo(ax, ay);
+                ctx.lineTo(bx, by);
+                ctx.stroke();
+
+                // Pixelated nodes at endpoints
+                ctx.globalAlpha = 0.8;
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(ax - 3, ay - 3, 6, 6);
+                ctx.fillRect(bx - 3, by - 3, 6, 6);
+                ctx.fillStyle = '#fecaca';
+                ctx.fillRect(ax - 1, ay - 1, 2, 2);
+                ctx.fillRect(bx - 1, by - 1, 2, 2);
+
+                ctx.restore();
+            });
+        }
+
+        // ---- ROTATING ARM ----
+        function attachRotatingArm(rock) {
+            rock.rotatingArm = {
+                length: rock.radius * 1.8 + 20,
+                angle: Math.random() * Math.PI * 2,
+                speed: (Math.random() > 0.5 ? 1 : -1) * (0.015 + Math.random() * 0.015)
+            };
+        }
+
+        function updateRotatingArms() {
+            for (let i = 0; i < asteroids.length; i++) {
+                const a = asteroids[i];
+                if (!a.rotatingArm) continue;
+                a.rotatingArm.angle += a.rotatingArm.speed;
+
+                // Collision check: ship vs arm line
+                const arm = a.rotatingArm;
+                const endX = a.x + Math.cos(arm.angle) * arm.length;
+                const endY = a.y + Math.sin(arm.angle) * arm.length;
+                const dist = pointToSegmentDist(ship.x, ship.y, a.x, a.y, endX, endY);
+
+                if (dist < 10) {
+                    if (effects.shield) {
+                        triggerShieldBreak(endX, endY);
+                        a.rotatingArm = null; // Remove arm, keep asteroid
+                    } else {
+                        triggerGameOver();
+                    }
+                }
+            }
+        }
+
+        function drawRotatingArms() {
+            asteroids.forEach(a => {
+                if (!a.rotatingArm) return;
+                const arm = a.rotatingArm;
+                const endX = a.x + Math.cos(arm.angle) * arm.length;
+                const endY = a.y + Math.sin(arm.angle) * arm.length;
+                const phase = Date.now() * 0.005;
+                const pulseAlpha = 0.5 + 0.2 * Math.sin(phase);
+
+                ctx.save();
+
+                // Glow
+                ctx.globalAlpha = pulseAlpha * 0.3;
+                ctx.strokeStyle = '#f97316';
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+
+                // Core
+                ctx.globalAlpha = pulseAlpha + 0.3;
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+
+                // Inner bright line
+                ctx.globalAlpha = 0.9;
+                ctx.strokeStyle = '#fef3c7';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+
+                // Tip node
+                ctx.fillStyle = '#fbbf24';
+                ctx.fillRect(endX - 4, endY - 4, 8, 8);
+                ctx.fillStyle = '#fef3c7';
+                ctx.fillRect(endX - 2, endY - 2, 4, 4);
+
+                ctx.restore();
+            });
+        }
+
+        // ---- ION STORM ZONES ----
+        function spawnIonZone(x, y) {
+            const effectType = Math.random() > 0.5 ? 'invert' : 'reducedThrust';
+            ionZones.push({
+                x, y,
+                width: 200 + Math.random() * 150,
+                height: 180 + Math.random() * 120,
+                effectType,
+                phase: Math.random() * Math.PI * 2,
+                timer: 0
+            });
+        }
+
+        function updateIonZones() {
+            const config = SHIP_TYPES[selectedShipType];
+            const actualWorldSpeed = worldSpeed * speedMultiplier * config.worldSpeedMod;
+
+            effects.ionActive = false;
+
+            for (let i = ionZones.length - 1; i >= 0; i--) {
+                const iz = ionZones[i];
+                iz.x -= actualWorldSpeed;
+                iz.phase += 0.03;
+
+                // Remove if off-screen
+                if (iz.x + iz.width < -50) {
+                    ionZones.splice(i, 1);
+                    continue;
+                }
+
+                // Check if ship is inside
+                if (ship.x > iz.x && ship.x < iz.x + iz.width &&
+                    ship.y > iz.y && ship.y < iz.y + iz.height) {
+                    effects.ionActive = true;
+                    effects.ionEffectType = iz.effectType;
+                }
+            }
+        }
+
+        function drawIonZones() {
+            ionZones.forEach(iz => {
+                const phase = iz.phase;
+
+                ctx.save();
+
+                // Pixelated noise inside
+                ctx.globalAlpha = 0.04;
+                const pxSz = 6;
+                const noiseColors = ['#7c3aed', '#a78bfa', '#6d28d9', '#4c1d95'];
+                for (let py = iz.y; py < iz.y + iz.height; py += pxSz * 3) {
+                    for (let px = iz.x; px < iz.x + iz.width; px += pxSz * 3) {
+                        if (Math.random() > 0.7) {
+                            ctx.fillStyle = noiseColors[Math.floor(Math.random() * noiseColors.length)];
+                            ctx.fillRect(px, py, pxSz, pxSz);
+                        }
+                    }
+                }
+
+                // Label inside zone
+                ctx.globalAlpha = 0.2 + 0.1 * Math.sin(phase);
+                ctx.fillStyle = '#c4b5fd';
+                ctx.font = '10px Courier New';
+                ctx.textAlign = 'center';
+                const label = iz.effectType === 'invert' ? '⚡ INVERT' : '⚡ ION DRAG';
+                ctx.fillText(label, iz.x + iz.width / 2, iz.y + iz.height / 2 + 4);
+
+                ctx.restore();
+            });
+
+            // Ion effect HUD indicator
+            if (effects.ionActive) {
+                ctx.save();
+                const p = Date.now() * 0.004;
+                ctx.globalAlpha = 0.02 + 0.01 * Math.sin(p);
+                ctx.fillStyle = '#7c3aed';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+        }
+
+        // ---- HAZARD MANAGER ----
+        function updateHazards() {
+            updateLaserConnectors();
+            updateRotatingArms();
+            updateIonZones();
+        }
+
+        function drawHazards() {
+            drawIonZones();
+            drawLaserConnectors();
+            drawRotatingArms();
+        }
+
+        // ---- UTILITY: Point to Segment Distance ----
+        function pointToSegmentDist(px, py, ax, ay, bx, by) {
+            const dx = bx - ax, dy = by - ay;
+            const lenSq = dx * dx + dy * dy;
+            if (lenSq === 0) return Math.sqrt((px - ax) * (px - ax) + (py - ay) * (py - ay));
+            let t = ((px - ax) * dx + (py - ay) * dy) / lenSq;
+            t = Math.max(0, Math.min(1, t));
+            const projX = ax + t * dx, projY = ay + t * dy;
+            return Math.sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
+        }
+
+        // =====================================================
+        // POWER-UP SYSTEM
+        // =====================================================
+        const powerUps = [];
+        const POWERUP_RADIUS = 16;
+
+        function spawnPowerUp(type, x, y) {
+            powerUps.push({
+                type, x, y,
+                radius: POWERUP_RADIUS,
+                phase: Math.random() * Math.PI * 2,
+                collected: false
+            });
+        }
+
+        function activatePowerUp(type) {
+            if (type === 'shield') {
+                effects.shield = true;
+                effects.shieldTimer = effects.shieldMaxTime;
+                effects.shieldFlashTimer = 0;
+                shieldHud.classList.remove('hidden');
+                playSound(600, 'sine', 0.15, 0.08);
+                playSound(900, 'sine', 0.12, 0.06);
+                playSound(1200, 'triangle', 0.2, 0.04);
+                createParticles(ship.x, ship.y, '#22d3ee', 8);
+            } else if (type === 'corridor') {
+                effects.corridorReady = true;
+                effects.corridorCooldown = 0;
+                updateFieldButtonState();
+                playSound(500, 'triangle', 0.15, 0.07);
+                playSound(700, 'sine', 0.12, 0.05);
+                playSound(1000, 'triangle', 0.18, 0.04);
+                createParticles(ship.x, ship.y, '#34d399', 8);
+            }
+        }
+
+        function activateCorridorClear() {
+            if (!effects.corridorReady || effects.corridorClear) return;
+            effects.corridorReady = false;
+            effects.corridorClear = true;
+            effects.corridorTimer = effects.corridorMaxTime;
+            corridorHud.classList.remove('hidden');
+            updateFieldButtonState();
+            playSound(300, 'sine', 0.2, 0.08);
+            playSound(500, 'triangle', 0.15, 0.06);
+        }
+
+        function updateFieldButtonState() {
+            fieldBtn.classList.remove('ready', 'active', 'cooldown');
+            if (effects.corridorClear) {
+                fieldBtn.classList.add('active');
+                fieldBtn.textContent = 'Field: ON';
+            } else if (effects.corridorReady) {
+                fieldBtn.classList.add('ready');
+                fieldBtn.textContent = 'Field [F]';
+            } else if (effects.corridorCooldown > 0) {
+                fieldBtn.classList.add('cooldown');
+                const secs = Math.ceil(effects.corridorCooldown / 60);
+                fieldBtn.textContent = `Field: ${secs}s`;
+            } else {
+                fieldBtn.classList.add('cooldown');
+                fieldBtn.textContent = 'Field [F]';
+            }
+        }
+
+        function updatePowerUps() {
+            const config = SHIP_TYPES[selectedShipType];
+            const actualWorldSpeed = worldSpeed * speedMultiplier * config.worldSpeedMod;
+
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                const pu = powerUps[i];
+                pu.x -= actualWorldSpeed;
+                pu.phase += 0.06;
+
+                const dx = pu.x - ship.x;
+                const dy = pu.y - ship.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const collectRadius = pu.radius + Math.min(ship.w, ship.h) * 0.35;
+
+                if (dist < collectRadius) {
+                    activatePowerUp(pu.type);
+                    powerUps.splice(i, 1);
+                    continue;
+                }
+
+                if (pu.x < -50) {
+                    powerUps.splice(i, 1);
+                }
+            }
+
+            // Shield timer
+            if (effects.shield) {
+                effects.shieldTimer--;
+                shieldTimerBar.style.width = `${Math.max(0, (effects.shieldTimer / effects.shieldMaxTime) * 100)}%`;
+                if (effects.shieldTimer <= 0) {
+                    effects.shield = false;
+                    effects.shieldTimer = 0;
+                    shieldHud.classList.add('hidden');
+                    playSound(400, 'sine', 0.2, 0.04);
+                    playSound(200, 'sine', 0.3, 0.03);
+                }
+            }
+
+            if (effects.shieldFlashTimer > 0) {
+                effects.shieldFlashTimer--;
+            }
+
+            // Corridor clear timer
+            if (effects.corridorClear) {
+                effects.corridorTimer--;
+                corridorTimerBar.style.width = `${Math.max(0, (effects.corridorTimer / effects.corridorMaxTime) * 100)}%`;
+                if (effects.corridorTimer <= 0) {
+                    effects.corridorClear = false;
+                    effects.corridorTimer = 0;
+                    effects.corridorCooldown = effects.corridorCooldownMax;
+                    corridorHud.classList.add('hidden');
+                    updateFieldButtonState();
+                    playSound(200, 'sine', 0.2, 0.04);
+                }
+            }
+
+            // Corridor cooldown
+            if (effects.corridorCooldown > 0) {
+                effects.corridorCooldown--;
+                if (effects.corridorCooldown <= 0) {
+                    updateFieldButtonState();
+                } else if (effects.corridorCooldown % 60 === 0) {
+                    updateFieldButtonState();
+                }
+            }
+        }
+
+        function drawPowerUps() {
+            powerUps.forEach(pu => {
+                const bobY = Math.sin(pu.phase) * 4;
+                const pulse = 0.85 + 0.15 * Math.sin(pu.phase * 1.5);
+                const drawX = pu.x;
+                const drawY = pu.y + bobY;
+
+                ctx.save();
+                ctx.translate(drawX, drawY);
+                ctx.scale(pulse, pulse);
+
+                if (pu.type === 'shield') {
+                    const glowR = 22;
+                    const grad = ctx.createRadialGradient(0, 0, 4, 0, 0, glowR);
+                    grad.addColorStop(0, 'rgba(34,211,238,0.25)');
+                    grad.addColorStop(1, 'rgba(34,211,238,0)');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(-glowR, -glowR, glowR * 2, glowR * 2);
+
+                    const px = 3;
+                    const iconPixels = [
+                        { x: 0, y: -4, c: '#06b6d4' },
+                        { x: 1, y: -3, c: '#22d3ee' }, { x: -1, y: -3, c: '#22d3ee' },
+                        { x: 2, y: -2, c: '#06b6d4' }, { x: -2, y: -2, c: '#06b6d4' },
+                        { x: 3, y: -1, c: '#22d3ee' }, { x: -3, y: -1, c: '#22d3ee' },
+                        { x: 4, y: 0, c: '#06b6d4' }, { x: -4, y: 0, c: '#06b6d4' },
+                        { x: 3, y: 1, c: '#22d3ee' }, { x: -3, y: 1, c: '#22d3ee' },
+                        { x: 2, y: 2, c: '#06b6d4' }, { x: -2, y: 2, c: '#06b6d4' },
+                        { x: 1, y: 3, c: '#22d3ee' }, { x: -1, y: 3, c: '#22d3ee' },
+                        { x: 0, y: 4, c: '#06b6d4' },
+                        { x: 0, y: -2, c: '#0e7490' }, { x: 0, y: -1, c: '#0891b2' },
+                        { x: 0, y: 0, c: '#67e8f9' }, { x: 0, y: 1, c: '#0891b2' },
+                        { x: 0, y: 2, c: '#0e7490' },
+                        { x: -1, y: -1, c: '#0e7490' }, { x: 1, y: -1, c: '#0e7490' },
+                        { x: -1, y: 0, c: '#22d3ee' }, { x: 1, y: 0, c: '#22d3ee' },
+                        { x: -2, y: 0, c: '#0891b2' }, { x: 2, y: 0, c: '#0891b2' },
+                        { x: -1, y: 1, c: '#0e7490' }, { x: 1, y: 1, c: '#0e7490' },
+                        { x: -1, y: -2, c: '#164e63' }, { x: 1, y: -2, c: '#164e63' },
+                        { x: -2, y: -1, c: '#155e75' }, { x: 2, y: -1, c: '#155e75' },
+                        { x: -2, y: 1, c: '#155e75' }, { x: 2, y: 1, c: '#155e75' },
+                        { x: -1, y: 2, c: '#164e63' }, { x: 1, y: 2, c: '#164e63' },
+                    ];
+                    iconPixels.forEach(ip => {
+                        ctx.fillStyle = ip.c;
+                        ctx.fillRect(ip.x * px - px / 2, ip.y * px - px / 2, px, px);
+                    });
+                } else if (pu.type === 'corridor') {
+                    // Corridor Clear Field pickup — teal/green expanding ring icon
+                    const glowR = 22;
+                    const grad = ctx.createRadialGradient(0, 0, 4, 0, 0, glowR);
+                    grad.addColorStop(0, 'rgba(52,211,153,0.25)');
+                    grad.addColorStop(1, 'rgba(52,211,153,0)');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(-glowR, -glowR, glowR * 2, glowR * 2);
+
+                    const px = 3;
+                    // Expanding arrows icon
+                    const iconPixels = [
+                        // Up arrow
+                        { x: 0, y: -4, c: '#34d399' },
+                        { x: -1, y: -3, c: '#10b981' }, { x: 0, y: -3, c: '#6ee7b7' }, { x: 1, y: -3, c: '#10b981' },
+                        { x: -2, y: -2, c: '#059669' }, { x: 0, y: -2, c: '#34d399' }, { x: 2, y: -2, c: '#059669' },
+                        // Center ring
+                        { x: -3, y: 0, c: '#10b981' }, { x: -2, y: 0, c: '#34d399' },
+                        { x: -1, y: 0, c: '#6ee7b7' }, { x: 0, y: 0, c: '#a7f3d0' },
+                        { x: 1, y: 0, c: '#6ee7b7' }, { x: 2, y: 0, c: '#34d399' }, { x: 3, y: 0, c: '#10b981' },
+                        { x: -2, y: -1, c: '#047857' }, { x: 2, y: -1, c: '#047857' },
+                        { x: -2, y: 1, c: '#047857' }, { x: 2, y: 1, c: '#047857' },
+                        // Down arrow
+                        { x: -2, y: 2, c: '#059669' }, { x: 0, y: 2, c: '#34d399' }, { x: 2, y: 2, c: '#059669' },
+                        { x: -1, y: 3, c: '#10b981' }, { x: 0, y: 3, c: '#6ee7b7' }, { x: 1, y: 3, c: '#10b981' },
+                        { x: 0, y: 4, c: '#34d399' },
+                    ];
+                    iconPixels.forEach(ip => {
+                        ctx.fillStyle = ip.c;
+                        ctx.fillRect(ip.x * px - px / 2, ip.y * px - px / 2, px, px);
+                    });
+                }
+
+                ctx.restore();
+            });
+        }
+
+        function drawShieldAura() {
+            if (!effects.shield) return;
+
+            const phase = Date.now() * 0.004;
+            const pulseR = 1 + 0.08 * Math.sin(phase);
+            const baseRadius = Math.max(ship.w, ship.h) * 0.55;
+            const radius = baseRadius * pulseR;
+
+            ctx.save();
+            ctx.translate(ship.x, ship.y);
+
+            const outerGrad = ctx.createRadialGradient(0, 0, radius * 0.7, 0, 0, radius * 1.3);
+            outerGrad.addColorStop(0, 'rgba(34,211,238,0)');
+            outerGrad.addColorStop(0.5, 'rgba(34,211,238,0.06)');
+            outerGrad.addColorStop(0.8, 'rgba(6,182,212,0.12)');
+            outerGrad.addColorStop(1, 'rgba(34,211,238,0)');
+            ctx.fillStyle = outerGrad;
+            ctx.fillRect(-radius * 1.4, -radius * 1.4, radius * 2.8, radius * 2.8);
+
+            ctx.globalAlpha = 0.15 + 0.05 * Math.sin(phase * 1.5);
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#22d3ee';
+            ctx.fill();
+
+            ctx.globalAlpha = 0.35 + 0.15 * Math.sin(phase * 2);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#06b6d4';
+            ctx.stroke();
+
+            ctx.globalAlpha = 0.5;
+            const dotCount = 16;
+            for (let i = 0; i < dotCount; i++) {
+                const angle = (i / dotCount) * Math.PI * 2 + phase * 0.5;
+                const shimmer = 0.4 + 0.6 * Math.sin(phase * 3 + i * 1.2);
+                ctx.globalAlpha = shimmer * 0.5;
+                ctx.fillStyle = i % 2 === 0 ? '#67e8f9' : '#22d3ee';
+                ctx.fillRect(Math.cos(angle) * radius - 1.5, Math.sin(angle) * radius - 1.5, 3, 3);
+            }
+
+            ctx.globalAlpha = 1;
+            ctx.restore();
+
+            if (effects.shieldFlashTimer > 0) {
+                ctx.save();
+                ctx.globalAlpha = effects.shieldFlashTimer / 15 * 0.25;
+                ctx.fillStyle = '#22d3ee';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+        }
+
+        function drawCorridorFieldEffect() {
+            if (!effects.corridorClear) return;
+
+            const phase = Date.now() * 0.003;
+            const centerY = canvas.height / 2;
+            const corridorHalfH = canvas.height * 0.18;
+
+            ctx.save();
+
+            // Top push zone
+            ctx.globalAlpha = 0.04 + 0.02 * Math.sin(phase);
+            ctx.fillStyle = '#10b981';
+            ctx.fillRect(0, 0, canvas.width, centerY - corridorHalfH);
+
+            // Bottom push zone
+            ctx.fillRect(0, centerY + corridorHalfH, canvas.width, canvas.height - centerY - corridorHalfH);
+
+            // Corridor border lines
+            ctx.globalAlpha = 0.15 + 0.1 * Math.sin(phase * 2);
+            ctx.strokeStyle = '#34d399';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath();
+            ctx.moveTo(0, centerY - corridorHalfH);
+            ctx.lineTo(canvas.width, centerY - corridorHalfH);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, centerY + corridorHalfH);
+            ctx.lineTo(canvas.width, centerY + corridorHalfH);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Directional arrows
+            ctx.globalAlpha = 0.12 + 0.06 * Math.sin(phase * 1.5);
+            ctx.fillStyle = '#34d399';
+            const arrowSpacing = 120;
+            for (let ax = 60; ax < canvas.width; ax += arrowSpacing) {
+                // Up arrows in top zone
+                const topY = (centerY - corridorHalfH) / 2;
+                ctx.fillRect(ax - 1, topY - 6, 2, 12);
+                ctx.fillRect(ax - 3, topY - 3, 6, 2);
+                ctx.fillRect(ax - 5, topY - 1, 10, 2);
+
+                // Down arrows in bottom zone
+                const botY = centerY + corridorHalfH + (canvas.height - centerY - corridorHalfH) / 2;
+                ctx.fillRect(ax - 1, botY - 6, 2, 12);
+                ctx.fillRect(ax - 3, botY + 1, 6, 2);
+                ctx.fillRect(ax - 5, botY - 1, 10, 2);
+            }
+
+            ctx.restore();
+        }
+
+        function triggerShieldBreak(asteroidX, asteroidY) {
+            effects.shield = false;
+            effects.shieldTimer = 0;
+            effects.shieldFlashTimer = 15;
+            shieldHud.classList.add('hidden');
+
+            const colors = ['#22d3ee', '#06b6d4', '#67e8f9', '#0891b2', '#ffffff'];
+            for (let i = 0; i < 25; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 5 + 1.5;
+                particles.push({
+                    x: asteroidX, y: asteroidY,
+                    vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    size: Math.random() * 4 + 1.5, life: 1.0,
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                });
+            }
+            const rockColors = ['#4b5563', '#6b7280', '#9ca3af', '#f97316', '#eab308'];
+            for (let i = 0; i < 18; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 4 + 1;
+                particles.push({
+                    x: asteroidX, y: asteroidY,
+                    vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    size: Math.random() * 3 + 2, life: 1.0,
+                    color: rockColors[Math.floor(Math.random() * rockColors.length)]
+                });
+            }
+
+            playSound(800, 'sine', 0.1, 0.12);
+            playSound(400, 'triangle', 0.2, 0.08);
+            playSound(200, 'sawtooth', 0.15, 0.06);
+        }
+
+        // ---- STARS ----
+        const stars = [];
+        for (let i = 0; i < 200; i++) {
+            stars.push({
+                x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+                size: Math.random() > 0.90 ? 2 : 1,
+                speed: Math.random() * 0.6 + 0.08,
+                color: BIOMES[0].starColors[Math.floor(Math.random() * BIOMES[0].starColors.length)],
+                twinkle: Math.random() * Math.PI * 2
+            });
+        }
+
+        // =====================================================
+        // BACKGROUND MUSIC ENGINE
+        // =====================================================
+        let bgMusicInterval = null;
+        let bgMusicNodes = [];
+        let bgMusicGainNode = null;
+        let bgMusicFadingOut = false;
+        let bgMusicCurrentBiome = -1;
+
+        const BIOME_MUSIC = [
+            // 0: Deep Void — slow ambient drone + high pings
+            function () {
+                let step = 0;
+                const melody = [220, 0, 0, 330, 0, 165, 0, 0, 275, 0, 0, 0];
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    const freq = melody[step % melody.length];
+                    if (freq > 0) {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.type = 'sine'; o.frequency.value = freq;
+                        g.gain.setValueAtTime(0.018, audioCtx.currentTime);
+                        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.9);
+                        o.connect(g); g.connect(bgMusicGainNode);
+                        o.start(); o.stop(audioCtx.currentTime + 0.9);
+                    }
+                    // Low drone every 4 steps
+                    if (step % 4 === 0) {
+                        const o2 = audioCtx.createOscillator();
+                        const g2 = audioCtx.createGain();
+                        o2.type = 'sine'; o2.frequency.value = 55 + (step % 8) * 5;
+                        g2.gain.setValueAtTime(0.025, audioCtx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.8);
+                        o2.connect(g2); g2.connect(bgMusicGainNode);
+                        o2.start(); o2.stop(audioCtx.currentTime + 1.8);
+                    }
+                    step++;
+                }, 300);
+            },
+            // 1: Nebula Drift — flowing arpeggios
+            function () {
+                let step = 0;
+                const arp = [261.6, 329.6, 392, 493.9, 392, 329.6, 261.6, 220];
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    const freq = arp[step % arp.length];
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = 'sine'; o.frequency.value = freq;
+                    g.gain.setValueAtTime(0.022, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                    o.connect(g); g.connect(bgMusicGainNode);
+                    o.start(); o.stop(audioCtx.currentTime + 0.5);
+                    // Harmonic overlay every 4
+                    if (step % 4 === 0) {
+                        const o2 = audioCtx.createOscillator();
+                        const g2 = audioCtx.createGain();
+                        o2.type = 'triangle'; o2.frequency.value = freq * 0.5;
+                        g2.gain.setValueAtTime(0.014, audioCtx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+                        o2.connect(g2); g2.connect(bgMusicGainNode);
+                        o2.start(); o2.stop(audioCtx.currentTime + 1.2);
+                    }
+                    step++;
+                }, 200);
+            },
+            // 2: Ion Storm — driving pulse bass + glitchy hits
+            function () {
+                let step = 0;
+                const bass = [55, 55, 82, 55, 110, 55, 73, 55];
+                const melody = [440, 0, 660, 0, 550, 0, 440, 880];
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    // Bass pulse
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = 'sawtooth'; o.frequency.value = bass[step % bass.length];
+                    g.gain.setValueAtTime(0.028, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+                    o.connect(g); g.connect(bgMusicGainNode);
+                    o.start(); o.stop(audioCtx.currentTime + 0.18);
+                    // Melody stabs
+                    const mf = melody[step % melody.length];
+                    if (mf > 0 && step % 2 === 0) {
+                        const o2 = audioCtx.createOscillator();
+                        const g2 = audioCtx.createGain();
+                        o2.type = 'square'; o2.frequency.value = mf;
+                        g2.gain.setValueAtTime(0.012, audioCtx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+                        o2.connect(g2); g2.connect(bgMusicGainNode);
+                        o2.start(); o2.stop(audioCtx.currentTime + 0.12);
+                    }
+                    step++;
+                }, 150);
+            },
+            // 3: Crystal Expanse — bright melodic tones
+            function () {
+                let step = 0;
+                const crystal = [523, 659, 784, 1047, 784, 659, 523, 440, 494, 659, 880, 659];
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    const freq = crystal[step % crystal.length];
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = 'triangle'; o.frequency.value = freq;
+                    g.gain.setValueAtTime(0.018, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+                    o.connect(g); g.connect(bgMusicGainNode);
+                    o.start(); o.stop(audioCtx.currentTime + 0.6);
+                    if (step % 3 === 0) {
+                        const o2 = audioCtx.createOscillator();
+                        const g2 = audioCtx.createGain();
+                        o2.type = 'sine'; o2.frequency.value = freq * 1.5;
+                        g2.gain.setValueAtTime(0.008, audioCtx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                        o2.connect(g2); g2.connect(bgMusicGainNode);
+                        o2.start(); o2.stop(audioCtx.currentTime + 0.4);
+                    }
+                    step++;
+                }, 250);
+            },
+            // 4: Singularity — low rumble + dissonant stabs
+            function () {
+                let step = 0;
+                const dissonant = [36, 37, 36, 38, 36, 0, 36, 40];
+                const stabs = [0, 311, 0, 0, 370, 0, 0, 277];
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    const freq = dissonant[step % dissonant.length];
+                    if (freq > 0) {
+                        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                        o.type = 'sawtooth'; o.frequency.value = freq;
+                        g.gain.setValueAtTime(0.035, audioCtx.currentTime);
+                        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
+                        o.connect(g); g.connect(bgMusicGainNode); o.start(); o.stop(audioCtx.currentTime + 0.7);
+                    }
+                    const sf = stabs[step % stabs.length];
+                    if (sf > 0) {
+                        const o2 = audioCtx.createOscillator(); const g2 = audioCtx.createGain();
+                        o2.type = 'square'; o2.frequency.value = sf;
+                        g2.gain.setValueAtTime(0.015, audioCtx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                        o2.connect(g2); g2.connect(bgMusicGainNode); o2.start(); o2.stop(audioCtx.currentTime + 0.25);
+                    }
+                    step++;
+                }, 220);
+            },
+            // 5: Gravity Tide — heavy sub pulse + detuned triangle tremolo
+            function () {
+                let step = 0;
+                const sub = [41, 41, 41, 55, 41, 41, 55, 41];
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                    o.type = 'sine'; o.frequency.value = sub[step % sub.length];
+                    g.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.55);
+                    o.connect(g); g.connect(bgMusicGainNode); o.start(); o.stop(audioCtx.currentTime + 0.55);
+                    if (step % 3 === 0) {
+                        const o2 = audioCtx.createOscillator(); const g2 = audioCtx.createGain();
+                        o2.type = 'triangle';
+                        o2.frequency.setValueAtTime(110 + (step % 4) * 12, audioCtx.currentTime);
+                        o2.frequency.linearRampToValueAtTime(95 + (step % 4) * 10, audioCtx.currentTime + 0.4);
+                        g2.gain.setValueAtTime(0.016, audioCtx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                        o2.connect(g2); g2.connect(bgMusicGainNode); o2.start(); o2.stop(audioCtx.currentTime + 0.8);
+                    }
+                    step++;
+                }, 350);
+            },
+            // 6: Derelict Belt — mechanical square rhythm + short triangle plucks
+            function () {
+                let step = 0;
+                const rhythm = [1, 0, 1, 1, 0, 1, 0, 1];
+                const plucks = [0, 330, 0, 440, 0, 0, 370, 0];
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    if (rhythm[step % rhythm.length]) {
+                        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                        o.type = 'square'; o.frequency.value = 82;
+                        g.gain.setValueAtTime(0.022, audioCtx.currentTime);
+                        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+                        o.connect(g); g.connect(bgMusicGainNode); o.start(); o.stop(audioCtx.currentTime + 0.08);
+                    }
+                    const pf = plucks[step % plucks.length];
+                    if (pf > 0) {
+                        const o2 = audioCtx.createOscillator(); const g2 = audioCtx.createGain();
+                        o2.type = 'triangle'; o2.frequency.value = pf;
+                        g2.gain.setValueAtTime(0.014, audioCtx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+                        o2.connect(g2); g2.connect(bgMusicGainNode); o2.start(); o2.stop(audioCtx.currentTime + 0.18);
+                    }
+                    step++;
+                }, 130);
+            },
+            // 7: Plasma Rift — fast sawtooth arps + glitch square clicks
+            function () {
+                let step = 0;
+                const arp = [880, 1108, 1320, 1760, 1320, 1108, 880, 660, 880, 1108, 1661, 1108];
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                    o.type = 'sawtooth'; o.frequency.value = arp[step % arp.length];
+                    g.gain.setValueAtTime(0.012, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+                    o.connect(g); g.connect(bgMusicGainNode); o.start(); o.stop(audioCtx.currentTime + 0.12);
+                    if (Math.random() > 0.7) {
+                        const o2 = audioCtx.createOscillator(); const g2 = audioCtx.createGain();
+                        o2.type = 'square'; o2.frequency.value = 2200 + Math.random() * 800;
+                        g2.gain.setValueAtTime(0.006, audioCtx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+                        o2.connect(g2); g2.connect(bgMusicGainNode); o2.start(); o2.stop(audioCtx.currentTime + 0.04);
+                    }
+                    step++;
+                }, 100);
+            },
+            // 8: Fracture Realm — two detuned sine layers + slow saw pulse
+            function () {
+                let step = 0;
+                const notes = [196, 220, 246, 220, 196, 174, 196, 220];
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    const f = notes[step % notes.length];
+                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                    o.type = 'sine'; o.frequency.value = f;
+                    g.gain.setValueAtTime(0.018, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                    o.connect(g); g.connect(bgMusicGainNode); o.start(); o.stop(audioCtx.currentTime + 0.8);
+                    const o2 = audioCtx.createOscillator(); const g2 = audioCtx.createGain();
+                    o2.type = 'sine'; o2.frequency.value = f * 1.006;
+                    g2.gain.setValueAtTime(0.016, audioCtx.currentTime);
+                    g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                    o2.connect(g2); g2.connect(bgMusicGainNode); o2.start(); o2.stop(audioCtx.currentTime + 0.8);
+                    if (step % 8 === 0) {
+                        const o3 = audioCtx.createOscillator(); const g3 = audioCtx.createGain();
+                        o3.type = 'sawtooth'; o3.frequency.value = 55;
+                        g3.gain.setValueAtTime(0.025, audioCtx.currentTime);
+                        g3.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.0);
+                        o3.connect(g3); g3.connect(bgMusicGainNode); o3.start(); o3.stop(audioCtx.currentTime + 2.0);
+                    }
+                    step++;
+                }, 270);
+            },
+            // 9: Meteor Cascade — driving saw bass + fast square accents
+            function () {
+                let step = 0;
+                const bass = [55, 55, 73, 55, 82, 55, 73, 82];
+                const acc = [880, 0, 1320, 880, 0, 1108, 0, 880];
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                    o.type = 'sawtooth'; o.frequency.value = bass[step % bass.length];
+                    g.gain.setValueAtTime(0.032, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.14);
+                    o.connect(g); g.connect(bgMusicGainNode); o.start(); o.stop(audioCtx.currentTime + 0.14);
+                    const af = acc[step % acc.length];
+                    if (af > 0) {
+                        const o2 = audioCtx.createOscillator(); const g2 = audioCtx.createGain();
+                        o2.type = 'square'; o2.frequency.value = af;
+                        g2.gain.setValueAtTime(0.01, audioCtx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+                        o2.connect(g2); g2.connect(bgMusicGainNode); o2.start(); o2.stop(audioCtx.currentTime + 0.08);
+                    }
+                    step++;
+                }, 125);
+            },
+            // 10: Event Horizon — deep sine sub + sparse tension stabs
+            function () {
+                let step = 0;
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    if (step % 2 === 0) {
+                        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                        o.type = 'sine'; o.frequency.value = 28 + (step % 6) * 2;
+                        g.gain.setValueAtTime(0.045, audioCtx.currentTime);
+                        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.4);
+                        o.connect(g); g.connect(bgMusicGainNode); o.start(); o.stop(audioCtx.currentTime + 1.4);
+                    }
+                    if (step % 9 === 0) {
+                        const o2 = audioCtx.createOscillator(); const g2 = audioCtx.createGain();
+                        o2.type = 'square'; o2.frequency.value = 180 + Math.random() * 120;
+                        g2.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                        o2.connect(g2); g2.connect(bgMusicGainNode); o2.start(); o2.stop(audioCtx.currentTime + 0.3);
+                    }
+                    step++;
+                }, 400);
+            },
+            // 11: Cosmic Storm — layered saw + square + triangle chaos
+            function () {
+                let step = 0;
+                const layers = [[55, 'sawtooth'], [330, 'square'], [660, 'triangle'], [110, 'sawtooth'], [440, 'square'], [880, 'triangle']];
+                return setInterval(() => {
+                    if (isMuted || !audioCtx || bgMusicFadingOut) return;
+                    const [freq, type] = layers[step % layers.length];
+                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                    o.type = type; o.frequency.value = freq;
+                    g.gain.setValueAtTime(0.018, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                    o.connect(g); g.connect(bgMusicGainNode); o.start(); o.stop(audioCtx.currentTime + 0.2);
+                    step++;
+                }, 110);
+            },
+            // 12: Void Ascension — sine pulse with BPM that gradually increases
+            function () {
+                let step = 0;
+                let bpm = 60;
+                const notes = [220, 277, 330, 415, 330, 277, 220, 185];
+                let intervalHandle;
+                const schedule = () => {
+                    if (!isMuted && audioCtx && !bgMusicFadingOut) {
+                        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                        o.type = 'sine'; o.frequency.value = notes[step % notes.length];
+                        g.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                        o.connect(g); g.connect(bgMusicGainNode); o.start(); o.stop(audioCtx.currentTime + 0.3);
+                        step++;
+                        bpm = Math.min(180, bpm + 0.15);
+                    }
+                    intervalHandle = setTimeout(schedule, 60000 / bpm);
+                };
+                schedule();
+                // Return a fake clearInterval handle by wrapping
+                return { _clearFn: () => clearTimeout(intervalHandle) };
+            }
+        ];
+
+        function stopBiomeMusic(fadeDuration = 0.8) {
+            if (!audioCtx || !bgMusicGainNode) return;
+            bgMusicFadingOut = true;
+            bgMusicGainNode.gain.setValueAtTime(bgMusicGainNode.gain.value, audioCtx.currentTime);
+            bgMusicGainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + fadeDuration);
+            setTimeout(() => {
+                if (bgMusicInterval) {
+                    if (bgMusicInterval._clearFn) bgMusicInterval._clearFn();
+                    else clearInterval(bgMusicInterval);
+                    bgMusicInterval = null;
+                }
+                bgMusicFadingOut = false;
+                bgMusicCurrentBiome = -1;
+            }, fadeDuration * 1000 + 50);
+        }
+
+        function playBiomeMusic(idx) {
+            if (!audioCtx) return;
+            if (bgMusicCurrentBiome === idx) return;
+            // Stop old
+            if (bgMusicInterval) {
+                if (bgMusicInterval._clearFn) bgMusicInterval._clearFn();
+                else clearInterval(bgMusicInterval);
+                bgMusicInterval = null;
+            }
+            bgMusicFadingOut = false;
+            bgMusicCurrentBiome = idx;
+            // Create/re-create master gain
+            if (!bgMusicGainNode) {
+                bgMusicGainNode = audioCtx.createGain();
+                bgMusicGainNode.gain.value = isMuted ? 0 : 0.8;
+                bgMusicGainNode.connect(audioCtx.destination);
+            } else {
+                bgMusicGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+                bgMusicGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                bgMusicGainNode.gain.linearRampToValueAtTime(isMuted ? 0 : 0.8, audioCtx.currentTime + 1.2);
+            }
+            if (!isMuted) bgMusicInterval = BIOME_MUSIC[idx]();
+        }
+
+        function setBgMusicMuted(muted) {
+            if (!bgMusicGainNode || !audioCtx) return;
+            bgMusicGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+            if (muted) {
+                bgMusicGainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                if (bgMusicInterval) { clearInterval(bgMusicInterval); bgMusicInterval = null; }
+            } else {
+                bgMusicGainNode.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.5);
+                if (!bgMusicInterval && bgMusicCurrentBiome >= 0) bgMusicInterval = BIOME_MUSIC[bgMusicCurrentBiome]();
+            }
+        }
+
+        function setBgMusicPaused(paused) {
+            if (!bgMusicGainNode || !audioCtx || isMuted) return;
+            bgMusicGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+            if (paused) {
+                bgMusicGainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+                if (bgMusicInterval) { clearInterval(bgMusicInterval); bgMusicInterval = null; }
+            } else {
+                bgMusicGainNode.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.5);
+                if (!bgMusicInterval && bgMusicCurrentBiome >= 0) bgMusicInterval = BIOME_MUSIC[bgMusicCurrentBiome]();
+            }
+        }
+
+        // ---- PIXELATED ASTEROID ENGINE ----
+        const asteroids = [];
+        const bgAsteroids = [];
+        let safeY = window.innerHeight / 2;
+        let spawnPatternCounter = 0;
+
+        function createRockModel(radius) {
+            const vertices = [];
+            const numPoints = 8 + Math.floor(Math.random() * 5);
+            for (let i = 0; i < numPoints; i++) {
+                const angle = (i / numPoints) * Math.PI * 2;
+                const r = radius * (0.68 + Math.random() * 0.32);
+                vertices.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
+            }
+            const craters = [];
+            const numCraters = 2 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < numCraters; i++) {
+                craters.push({
+                    x: (Math.random() - 0.5) * radius * 0.9,
+                    y: (Math.random() - 0.5) * radius * 0.9,
+                    r: Math.random() * radius * 0.22 + 3
+                });
+            }
+            return { vertices, craters, radius };
+        }
+
+        function createRockTexture(rock, isFg) {
+            const pad = 6;
+            const size = Math.ceil(rock.radius * 2 + pad * 2);
+            const tc = document.createElement('canvas');
+            tc.width = size; tc.height = size;
+            const tctx = tc.getContext('2d');
+            const cx = size / 2, cy = size / 2;
+
+            tctx.save();
+            tctx.beginPath();
+            tctx.moveTo(cx + rock.vertices[0].x, cy + rock.vertices[0].y);
+            for (let j = 1; j < rock.vertices.length; j++) {
+                tctx.lineTo(cx + rock.vertices[j].x, cy + rock.vertices[j].y);
+            }
+            tctx.closePath();
+            tctx.clip();
+
+            tctx.fillStyle = isFg ? '#222328' : '#0c0d10';
+            tctx.fillRect(0, 0, size, size);
+
+            const pxSize = isFg ? Math.max(3, Math.floor(rock.radius / 12)) : 4;
+            const baseColors = isFg
+                ? ['#2a2b30', '#33343a', '#1d1e22', '#252629', '#3a3b42', '#1a1b1f', '#2f3035', '#222328', '#28292e']
+                : ['#0c0d10', '#111215', '#0a0b0e', '#131418', '#0e0f13'];
+            // Biome-tinted mineral colors
+            const biomeMinerals = BIOMES[currentBiomeIdx].minerals;
+
+            for (let py = 0; py < size; py += pxSize) {
+                for (let px = 0; px < size; px += pxSize) {
+                    tctx.fillStyle = baseColors[Math.floor(Math.random() * baseColors.length)];
+                    tctx.fillRect(px, py, pxSize, pxSize);
+                }
+            }
+
+            if (isFg) {
+                for (let py = 0; py < size * 0.5; py += pxSize) {
+                    for (let px = 0; px < size * 0.55; px += pxSize) {
+                        if (Math.random() > 0.65) {
+                            tctx.fillStyle = Math.random() > 0.5 ? '#3d3e45' : '#454650';
+                            tctx.fillRect(px, py, pxSize, pxSize);
+                        }
+                    }
+                }
+                for (let py = size * 0.55; py < size; py += pxSize) {
+                    for (let px = size * 0.5; px < size; px += pxSize) {
+                        if (Math.random() > 0.6) {
+                            tctx.fillStyle = '#141518';
+                            tctx.fillRect(px, py, pxSize, pxSize);
+                        }
+                    }
+                }
+            }
+
+            if (isFg) {
+                const mineralCount = Math.floor(rock.radius / 8) + 2;
+                // Mix default stone colors with biome mineral tints
+                const mineralColors = ['#4a4d55', '#5a5d66', ...biomeMinerals];
+                for (let i = 0; i < mineralCount; i++) {
+                    const mx = Math.random() * size;
+                    const my = Math.random() * size;
+                    tctx.fillStyle = mineralColors[Math.floor(Math.random() * mineralColors.length)];
+                    tctx.fillRect(mx, my, pxSize, pxSize);
+                    if (Math.random() > 0.5) {
+                        tctx.fillRect(mx + pxSize, my, pxSize, pxSize);
+                    }
+                }
+            }
+
+            rock.craters.forEach(c => {
+                tctx.fillStyle = isFg ? '#111215' : '#060709';
+                tctx.beginPath();
+                tctx.arc(cx + c.x, cy + c.y, c.r, 0, Math.PI * 2);
+                tctx.fill();
+
+                const crPx = Math.max(2, pxSize - 1);
+                const craterFloorColors = isFg ? ['#0e1015', '#161820', '#0a0c10'] : ['#050608', '#080a0e'];
+                for (let py = -c.r; py < c.r; py += crPx) {
+                    for (let px = -c.r; px < c.r; px += crPx) {
+                        if (px * px + py * py < c.r * c.r * 0.85 && Math.random() > 0.4) {
+                            tctx.fillStyle = craterFloorColors[Math.floor(Math.random() * craterFloorColors.length)];
+                            tctx.fillRect(cx + c.x + px, cy + c.y + py, crPx, crPx);
+                        }
+                    }
+                }
+
+                if (isFg) {
+                    tctx.strokeStyle = '#4a4c55';
+                    tctx.lineWidth = 1.5;
+                    tctx.beginPath();
+                    tctx.arc(cx + c.x - 1, cy + c.y - 1, c.r + 0.5, -1.5, 1.0);
+                    tctx.stroke();
+                }
+            });
+
+            if (isFg && rock.radius > 25) {
+                const numCracks = 1 + Math.floor(Math.random() * 2);
+                tctx.strokeStyle = '#16171c';
+                tctx.lineWidth = 1;
+                for (let i = 0; i < numCracks; i++) {
+                    tctx.beginPath();
+                    let crX = cx + (Math.random() - 0.5) * rock.radius;
+                    let crY = cy + (Math.random() - 0.5) * rock.radius;
+                    tctx.moveTo(crX, crY);
+                    for (let s = 0; s < 3; s++) {
+                        crX += (Math.random() - 0.5) * rock.radius * 0.4;
+                        crY += (Math.random() - 0.5) * rock.radius * 0.4;
+                        tctx.lineTo(crX, crY);
+                    }
+                    tctx.stroke();
+                }
+            }
+
+            tctx.restore();
+
+            tctx.beginPath();
+            tctx.moveTo(cx + rock.vertices[0].x, cy + rock.vertices[0].y);
+            for (let j = 1; j < rock.vertices.length; j++) {
+                tctx.lineTo(cx + rock.vertices[j].x, cy + rock.vertices[j].y);
+            }
+            tctx.closePath();
+            tctx.lineWidth = isFg ? 2 : 1.5;
+            tctx.strokeStyle = isFg ? '#4b4d54' : '#1a1a20';
+            tctx.stroke();
+
+            if (isFg) {
+                for (let j = 0; j < rock.vertices.length; j++) {
+                    const v = rock.vertices[j];
+                    if (v.y < -rock.radius * 0.2 && Math.random() > 0.4) {
+                        tctx.fillStyle = '#555860';
+                        tctx.fillRect(cx + v.x - 1, cy + v.y - 1, 2, 2);
+                    }
+                }
+            }
+
+            rock.textureCanvas = tc;
+            rock.texCx = cx;
+            rock.texCy = cy;
+        }
+
+        function spawnRock(x, y, radius, isFg = true) {
+            const rock = {
+                x, y, ...createRockModel(radius),
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.02
+            };
+            createRockTexture(rock, isFg);
+            if (isFg) {
+                asteroids.push(rock);
+                return rock;
+            } else {
+                rock.parallax = 0.3 + Math.random() * 0.3;
+                bgAsteroids.push(rock);
+                return rock;
+            }
+        }
+
+        function isInSafeZone(y, gapCenter, gapHalf) {
+            return Math.abs(y - gapCenter) < gapHalf;
+        }
+
+        function spawnAsteroidWave() {
+            const h = canvas.height;
+            const startX = canvas.width + 120;
+            // Reduce shift per wave so safe corridor doesn't jump too far
+            const maxShift = 80;
+            safeY += (Math.random() - 0.5) * maxShift;
+            safeY = Math.max(220, Math.min(h - 220, safeY));
+
+            // Guaranteed passage — minimum 130px half-gap (260px total) so any ship fits
+            const baseGapHalf = Math.max(130, 200 - (distanceTraveled / 40));
+            const gapHalf = Math.max(120, baseGapHalf * getSectorSpawnReduction());
+
+            spawnPatternCounter++;
+            const numPatterns = 5 + Math.min(3, Math.floor((currentSector - 1) / 2));
+            const pattern = spawnPatternCounter % numPatterns;
+
+            // Power-up chance: shield (18%), corridor (8% — rarer)
+            const puRoll = Math.random();
+            if (puRoll < 0.18) {
+                spawnPowerUp('shield', startX + 50, safeY);
+            } else if (puRoll < 0.26 && !effects.corridorReady && !effects.corridorClear) {
+                spawnPowerUp('corridor', startX + 50, safeY);
+            }
+
+            // Sector density modifier: more rocks per wave in higher sectors
+            const densityMod = getSectorDensityMod();
+            const recentFgRocks = []; // track rocks spawned this wave for laser connectors
+
+            if (pattern === 0) {
+                const numRocks = Math.floor((4 + Math.floor(Math.random() * 3)) * densityMod);
+                for (let i = 0; i < numRocks; i++) {
+                    let y, attempts = 0;
+                    do { y = Math.random() * h; attempts++; } while (isInSafeZone(y, safeY, gapHalf) && attempts < 20);
+                    if (attempts < 20) {
+                        const r = spawnRock(startX + (Math.random() - 0.5) * 180, y, 25 + Math.random() * 35);
+                        recentFgRocks.push(r);
+                    }
+                }
+            } else if (pattern === 1) {
+                const rockSize = 35 + Math.random() * 15;
+                let y = rockSize;
+                while (y < h) {
+                    if (!isInSafeZone(y, safeY, gapHalf)) {
+                        const r = spawnRock(startX + (Math.random() - 0.5) * 40, y, rockSize + (Math.random() - 0.5) * 15);
+                        recentFgRocks.push(r);
+                    }
+                    y += rockSize * 1.6 + Math.random() * 20;
+                }
+            } else if (pattern === 2) {
+                const numRocks = Math.floor((5 + Math.floor(Math.random() * 3)) * densityMod);
+                const goingUp = Math.random() > 0.5;
+                for (let i = 0; i < numRocks; i++) {
+                    const t = i / numRocks;
+                    let y = goingUp ? (h * 0.85 - t * h * 0.7) : (h * 0.15 + t * h * 0.7);
+                    if (!isInSafeZone(y, safeY, gapHalf * 0.9)) {
+                        const r = spawnRock(startX + i * 70, y, 28 + Math.random() * 25);
+                        recentFgRocks.push(r);
+                    }
+                }
+            } else if (pattern === 3) {
+                const numClusters = Math.floor((2 + Math.floor(Math.random() * 2)) * densityMod);
+                for (let c = 0; c < numClusters; c++) {
+                    let clusterY, attempts = 0;
+                    do { clusterY = 100 + Math.random() * (h - 200); attempts++; } while (isInSafeZone(clusterY, safeY, gapHalf + 30) && attempts < 20);
+                    if (attempts < 20) {
+                        const clusterX = startX + (Math.random() - 0.5) * 100;
+                        for (let r = 0; r < 2 + Math.floor(Math.random() * 3); r++) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const dist = Math.random() * 50;
+                            const rock = spawnRock(clusterX + Math.cos(angle) * dist, clusterY + Math.sin(angle) * dist, 20 + Math.random() * 30);
+                            recentFgRocks.push(rock);
+                        }
+                    }
+                }
+            } else if (pattern === 4) {
+                for (let i = 0; i < 2; i++) {
+                    let y, attempts = 0;
+                    do { y = 100 + Math.random() * (h - 200); attempts++; } while (isInSafeZone(y, safeY, gapHalf + 20) && attempts < 20);
+                    if (attempts < 20) {
+                        const r = spawnRock(startX + Math.random() * 80, y, 45 + Math.random() * 35);
+                        recentFgRocks.push(r);
+                    }
+                }
+                for (let i = 0; i < 4; i++) {
+                    let y, attempts = 0;
+                    do { y = Math.random() * h; attempts++; } while (isInSafeZone(y, safeY, gapHalf) && attempts < 20);
+                    if (attempts < 20) {
+                        const r = spawnRock(startX + Math.random() * 200, y, 15 + Math.random() * 20);
+                        recentFgRocks.push(r);
+                    }
+                }
+            } else if (pattern === 5) {
+                // Extra pattern unlocked by sector: dense corridor
+                const numRocks = Math.floor(6 * densityMod);
+                for (let i = 0; i < numRocks; i++) {
+                    let y, attempts = 0;
+                    do { y = Math.random() * h; attempts++; } while (isInSafeZone(y, safeY, gapHalf * 0.85) && attempts < 20);
+                    if (attempts < 20) {
+                        const r = spawnRock(startX + i * 50 + (Math.random() - 0.5) * 40, y, 20 + Math.random() * 30);
+                        recentFgRocks.push(r);
+                    }
+                }
+            } else if (pattern === 6) {
+                // Extra pattern: pinch formation
+                const numRocks = Math.floor(5 * densityMod);
+                for (let i = 0; i < numRocks; i++) {
+                    const side = i % 2 === 0 ? -1 : 1;
+                    const yOff = side * (gapHalf + 20 + Math.random() * 60);
+                    const r = spawnRock(startX + i * 60, safeY + yOff, 30 + Math.random() * 25);
+                    recentFgRocks.push(r);
+                }
+            } else {
+                // Fallback to pattern 0 style
+                const numRocks = Math.floor(5 * densityMod);
+                for (let i = 0; i < numRocks; i++) {
+                    let y, attempts = 0;
+                    do { y = Math.random() * h; attempts++; } while (isInSafeZone(y, safeY, gapHalf) && attempts < 20);
+                    if (attempts < 20) {
+                        const r = spawnRock(startX + (Math.random() - 0.5) * 200, y, 22 + Math.random() * 30);
+                        recentFgRocks.push(r);
+                    }
+                }
+            }
+
+            // ---- HAZARD SPAWNING (sector-gated) ----
+
+            // Laser Connectors: start from sector 2, chance increases
+            if (currentSector >= 2 && recentFgRocks.length >= 2) {
+                const laserChance = Math.min(0.5, 0.15 + (currentSector - 2) * 0.08);
+                if (Math.random() < laserChance) {
+                    // Pick two close-ish rocks
+                    let bestPair = null, bestDist = Infinity;
+                    for (let i = 0; i < recentFgRocks.length && i < 8; i++) {
+                        for (let j = i + 1; j < recentFgRocks.length && j < 8; j++) {
+                            const rA = recentFgRocks[i], rB = recentFgRocks[j];
+                            const d = Math.sqrt((rA.x - rB.x) ** 2 + (rA.y - rB.y) ** 2);
+                            if (d > 60 && d < 300 && d < bestDist) {
+                                bestDist = d;
+                                bestPair = [rA, rB];
+                            }
+                        }
+                    }
+                    if (bestPair) spawnLaserConnector(bestPair[0], bestPair[1]);
+                }
+            }
+
+            // Rotating Arms: start from sector 3, attach to large rocks
+            if (currentSector >= 3) {
+                const armChance = Math.min(0.4, 0.1 + (currentSector - 3) * 0.07);
+                if (Math.random() < armChance) {
+                    const bigRocks = recentFgRocks.filter(r => r.radius >= 35);
+                    if (bigRocks.length > 0) {
+                        const target = bigRocks[Math.floor(Math.random() * bigRocks.length)];
+                        if (!target.rotatingArm) attachRotatingArm(target);
+                    }
+                }
+            }
+
+            // Ion Storm Zones: start from sector 4
+            if (currentSector >= 4) {
+                const ionChance = Math.min(0.3, 0.08 + (currentSector - 4) * 0.05);
+                if (Math.random() < ionChance) {
+                    let zy, attempts = 0;
+                    do { zy = 80 + Math.random() * (h - 260); attempts++; } while (isInSafeZone(zy + 90, safeY, gapHalf * 0.5) && attempts < 15);
+                    if (attempts < 15) spawnIonZone(startX + 80, zy);
+                }
+            }
+
+            // Background decorative rocks
+            if (Math.random() > 0.35) {
+                spawnRock(startX + Math.random() * 300, Math.random() * h, 20 + Math.random() * 50, false);
+            }
+        }
+
+        function checkCollision(shipObj, rock) {
+            const rx = shipObj.x - shipObj.w / 2 + 8;
+            const ry = shipObj.y - shipObj.h / 2 + 8;
+            const rw = shipObj.w - 16;
+            const rh = shipObj.h - 16;
+            let testX = rock.x, testY = rock.y;
+            if (rock.x < rx) testX = rx;
+            else if (rock.x > rx + rw) testX = rx + rw;
+            if (rock.y < ry) testY = ry;
+            else if (rock.y > ry + rh) testY = ry + rh;
+            const distX = rock.x - testX, distY = rock.y - testY;
+            return Math.sqrt(distX * distX + distY * distY) <= rock.radius * 0.72;
+        }
+
+        let distanceTimer = 0;
+
+        function updateAsteroids() {
+            const config = SHIP_TYPES[selectedShipType];
+            const actualWorldSpeed = worldSpeed * speedMultiplier * config.worldSpeedMod;
+            distanceTimer += actualWorldSpeed;
+            distanceTraveled += actualWorldSpeed * 0.1;
+            score = Math.floor(distanceTraveled);
+            scoreEl.innerText = score;
+
+            // Sector-adjusted spawn threshold
+            const baseThreshold = Math.max(140, 280 - (worldSpeed * 8));
+            const spawnThreshold = baseThreshold * getSectorSpawnReduction();
+            if (distanceTimer > spawnThreshold) {
+                spawnAsteroidWave();
+                distanceTimer = 0;
+                worldSpeed += 0.012;
+            }
+
+            const centerY = canvas.height / 2;
+
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const a = asteroids[i];
+                a.x -= actualWorldSpeed;
+                a.rotation += a.rotSpeed;
+
+                // Corridor Clear Field: push asteroids away from center (does NOT affect lasers or arms)
+                if (effects.corridorClear) {
+                    const distFromCenter = a.y - centerY;
+                    const pushForce = 1.8;
+                    if (a.x > -50 && a.x < canvas.width + 100) {
+                        if (Math.abs(distFromCenter) < canvas.height * 0.35) {
+                            const dir = distFromCenter < 0 ? -1 : 1;
+                            a.y += dir * pushForce;
+                        }
+                    }
+                }
+
+                if (checkCollision(ship, a)) {
+                    if (effects.shield) {
+                        triggerShieldBreak(a.x, a.y);
+                        asteroids.splice(i, 1);
+                        continue;
+                    } else {
+                        triggerGameOver();
+                    }
+                }
+                if (a.x + a.radius < -100) asteroids.splice(i, 1);
+            }
+            for (let i = bgAsteroids.length - 1; i >= 0; i--) {
+                const b = bgAsteroids[i];
+                b.x -= actualWorldSpeed * b.parallax;
+                b.rotation += b.rotSpeed;
+                if (b.x + b.radius < -100) bgAsteroids.splice(i, 1);
+            }
+        }
+
+        function drawRock(rock) {
+            ctx.save();
+            ctx.translate(rock.x, rock.y);
+            ctx.rotate(rock.rotation);
+            if (rock.textureCanvas) {
+                ctx.drawImage(rock.textureCanvas, -rock.texCx, -rock.texCy);
+            }
+            ctx.restore();
+        }
+
+        function drawBackground() {
+            const biome = BIOMES[currentBiomeIdx];
+            const prevBiome = BIOMES[prevBiomeIdx];
+            const t = biomeTransitionProgress;
+
+            // --- Sky gradient ---
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            const topColor = lerpColor(hexToRgb(prevBiome.skyTop), hexToRgb(biome.skyTop), t);
+            const botColor = lerpColor(hexToRgb(prevBiome.skyBottom), hexToRgb(biome.skyBottom), t);
+            grad.addColorStop(0, topColor);
+            grad.addColorStop(1, botColor);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // --- Nebula blobs ---
+            const now = Date.now() * 0.00015;
+            biome.nebula.forEach(nb => {
+                const bx = nb.x * canvas.width + Math.sin(now * 0.8) * 40;
+                const by = nb.y * canvas.height + Math.cos(now * 0.6) * 30;
+                const rx = nb.rx * canvas.width;
+                const ry = nb.ry * canvas.height;
+                ctx.save();
+                ctx.globalAlpha = t;
+                ctx.translate(bx, by);
+                ctx.scale(1, ry / rx);
+                const ng = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+                ng.addColorStop(0, nb.color);
+                ng.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = ng;
+                ctx.fillRect(-rx, -rx, rx * 2, rx * 2);
+                ctx.restore();
+            });
+
+            // --- Biome-specific parallax elements ---
+            const actualSpeed = worldSpeed * speedMultiplier * SHIP_TYPES[selectedShipType].worldSpeedMod;
+            const moving = (gameState === 'PLAYING');
+
+            if (biome.parallax === 'storm' && t > 0.3) {
+                // Ion Storm: lightning streaks
+                if (moving) lightningTimer++;
+                if (moving && lightningTimer > 18 + Math.random() * 30) {
+                    lightningStreaks.push({
+                        x: canvas.width, y: Math.random() * canvas.height * 0.8,
+                        len: 80 + Math.random() * 200, alpha: 0.8,
+                        color: Math.random() > 0.5 ? '#fb923c' : '#fbbf24'
+                    });
+                    lightningTimer = 0;
+                }
+                for (let i = lightningStreaks.length - 1; i >= 0; i--) {
+                    const lk = lightningStreaks[i];
+                    if (moving) lk.x -= actualSpeed * 1.5;
+                    lk.alpha -= 0.025;
+                    if (lk.alpha <= 0 || lk.x < -300) { lightningStreaks.splice(i, 1); continue; }
+                    ctx.save();
+                    ctx.globalAlpha = lk.alpha * t;
+                    ctx.strokeStyle = lk.color;
+                    ctx.lineWidth = 1.5;
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = lk.color;
+                    ctx.beginPath();
+                    ctx.moveTo(lk.x, lk.y);
+                    let sx = lk.x, sy = lk.y;
+                    for (let seg = 0; seg < 5; seg++) {
+                        sx -= lk.len / 5;
+                        sy += (Math.random() - 0.5) * 30;
+                        ctx.lineTo(sx, sy);
+                    }
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            if (biome.parallax === 'crystal' && t > 0.3) {
+                // Crystal Expanse: floating crystal shards
+                crystalShards.forEach(cs => {
+                    if (moving) {
+                        cs.x -= cs.speed * actualSpeed * 0.002;
+                        if (cs.x < -0.05) cs.x = 1.05;
+                    }
+                    ctx.save();
+                    ctx.globalAlpha = cs.opacity * t;
+                    ctx.translate(cs.x * canvas.width, cs.y);
+                    ctx.rotate(cs.angle + now * 0.2);
+                    const hs = cs.size / 2;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -hs * 2);
+                    ctx.lineTo(hs * 0.6, 0);
+                    ctx.lineTo(0, hs * 1.5);
+                    ctx.lineTo(-hs * 0.6, 0);
+                    ctx.closePath();
+                    ctx.fillStyle = '#22d3ee';
+                    ctx.fill();
+                    ctx.strokeStyle = '#67e8f9';
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                    ctx.restore();
+                });
+            }
+
+            if (biome.parallax === 'singularity' && t > 0.3) {
+                // Singularity: concentric pulsing rings
+                const cx = canvas.width * 0.5, cy = canvas.height * 0.5;
+                for (let r = 1; r <= 5; r++) {
+                    const ringR = (r / 5) * canvas.height * 0.48 + Math.sin(now * 2 + r) * 15;
+                    ctx.save();
+                    ctx.globalAlpha = (0.06 - r * 0.01) * t;
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, ringR * 1.6, ringR, 0, 0, Math.PI * 2);
+                    ctx.strokeStyle = r % 2 === 0 ? '#d946ef' : '#a21caf';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            if (biome.parallax === 'gravity' && t > 0.3) {
+                // Gravity Tide: bending sine light waves across screen
+                for (let row = 0; row < 4; row++) {
+                    const baseY = (canvas.height / 5) * (row + 1);
+                    ctx.save();
+                    ctx.globalAlpha = (0.04 + Math.sin(now * 1.5 + row) * 0.015) * t;
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    for (let x = 0; x <= canvas.width; x += 4) {
+                        const y = baseY + Math.sin(x * 0.012 + now * 1.2 + row * 1.4) * 22;
+                        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            if (biome.parallax === 'derelict' && t > 0.3) {
+                // Derelict Belt: large broken station silhouettes drifting in BG
+                if (!drawBackground._derelicts) {
+                    drawBackground._derelicts = [];
+                    for (let i = 0; i < 3; i++) {
+                        drawBackground._derelicts.push({
+                            x: Math.random() * canvas.width, y: 60 + Math.random() * (canvas.height - 120),
+                            w: 80 + Math.random() * 120, h: 30 + Math.random() * 50,
+                            speed: 0.12 + Math.random() * 0.15, angle: (Math.random() - 0.5) * 0.3
+                        });
+                    }
+                }
+                drawBackground._derelicts.forEach(d => {
+                    if (moving) {
+                        d.x -= d.speed * actualSpeed * 0.5;
+                        if (d.x + d.w < -50) { d.x = canvas.width + 80; d.y = 80 + Math.random() * (canvas.height - 160); }
+                    }
+                    ctx.save();
+                    ctx.globalAlpha = 0.08 * t;
+                    ctx.translate(d.x, d.y);
+                    ctx.rotate(d.angle);
+                    ctx.fillStyle = '#334155';
+                    ctx.fillRect(-d.w / 2, -d.h / 2, d.w, d.h);
+                    // Cross beam
+                    ctx.fillRect(-d.w * 0.6, -d.h * 0.1, d.w * 1.2, d.h * 0.18);
+                    // Solar panel stubs
+                    ctx.fillRect(-d.w / 2 - 20, -5, 20, 10);
+                    ctx.fillRect(d.w / 2, -5, 25, 10);
+                    ctx.restore();
+                });
+            }
+
+            if (biome.parallax === 'plasma' && t > 0.3) {
+                // Plasma Rift: electric cyan crack web across background
+                ctx.save();
+                ctx.globalAlpha = (0.07 + Math.sin(now * 3) * 0.02) * t;
+                ctx.strokeStyle = '#06b6d4';
+                ctx.lineWidth = 1;
+                for (let c = 0; c < 6; c++) {
+                    const seed = c * 137.5;
+                    const sx = (Math.sin(seed * 0.1 + now * 0.3) * 0.5 + 0.5) * canvas.width;
+                    const sy = (Math.cos(seed * 0.13 + now * 0.2) * 0.5 + 0.5) * canvas.height;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, sy);
+                    let cx2 = sx, cy2 = sy;
+                    for (let seg = 0; seg < 6; seg++) {
+                        cx2 += (Math.sin(seed + seg * 2.1 + now) * 0.5 + 0.5 - 0.5) * 130;
+                        cy2 += (Math.cos(seed + seg * 1.7 + now) * 0.5 + 0.5 - 0.5) * 100;
+                        ctx.lineTo(cx2, cy2);
+                    }
+                    ctx.stroke();
+                }
+                // Plasma flash
+                if (Math.sin(now * 8) > 0.92) {
+                    ctx.globalAlpha = 0.04 * t;
+                    ctx.fillStyle = '#22d3ee';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+                ctx.restore();
+            }
+
+            if (biome.parallax === 'fracture' && t > 0.3) {
+                // Fracture Realm: mirrored horizon line + faint duplicate
+                const midY = canvas.height / 2;
+                ctx.save();
+                ctx.globalAlpha = 0.12 * t;
+                ctx.strokeStyle = '#818cf8';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([6, 6]);
+                ctx.beginPath();
+                ctx.moveTo(0, midY); ctx.lineTo(canvas.width, midY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                // Faint upside-down stars mirrored
+                ctx.globalAlpha = 0.06 * t;
+                ctx.fillStyle = '#a5b4fc';
+                stars.slice(0, 30).forEach(s => {
+                    ctx.fillRect(s.x, canvas.height - s.y, s.size, s.size);
+                });
+                ctx.restore();
+            }
+
+            if (biome.parallax === 'meteor' && t > 0.3) {
+                // Meteor Cascade: diagonal orange streaks raining down from top-right
+                if (!drawBackground._meteors) {
+                    drawBackground._meteors = [];
+                    for (let i = 0; i < 12; i++) {
+                        drawBackground._meteors.push({
+                            x: Math.random() * canvas.width * 1.5,
+                            y: Math.random() * canvas.height,
+                            len: 40 + Math.random() * 80,
+                            speed: 2.5 + Math.random() * 3,
+                            alpha: 0.3 + Math.random() * 0.5
+                        });
+                    }
+                }
+                drawBackground._meteors.forEach(m => {
+                    if (moving) {
+                        m.x -= m.speed * 0.8;
+                        m.y += m.speed * 1.2;
+                        if (m.y > canvas.height + 50 || m.x < -100) {
+                            m.x = canvas.width + Math.random() * 300;
+                            m.y = -50 - Math.random() * 200;
+                        }
+                    }
+                    ctx.save();
+                    ctx.globalAlpha = m.alpha * t;
+                    ctx.strokeStyle = '#fb923c';
+                    ctx.lineWidth = 1.5;
+                    ctx.shadowBlur = 5;
+                    ctx.shadowColor = '#f97316';
+                    ctx.beginPath();
+                    ctx.moveTo(m.x, m.y);
+                    ctx.lineTo(m.x + m.len * 0.5, m.y - m.len * 0.7);
+                    ctx.stroke();
+                    ctx.restore();
+                });
+            }
+
+            if (biome.parallax === 'horizon' && t > 0.3) {
+                // Event Horizon: gravitational lensing arcs squeezing toward center
+                const cx = canvas.width * 0.5, cy = canvas.height * 0.5;
+                for (let ring = 1; ring <= 7; ring++) {
+                    const rFactor = ring / 7;
+                    const baseRx = rFactor * canvas.width * 0.55;
+                    const baseRy = rFactor * canvas.height * 0.42;
+                    const squeeze = 0.85 + 0.15 * Math.sin(now * 0.8 + ring * 0.7);
+                    ctx.save();
+                    ctx.globalAlpha = (0.05 - ring * 0.005) * t;
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, baseRx * squeeze, baseRy * squeeze, 0, 0, Math.PI * 2);
+                    ctx.strokeStyle = ring % 2 === 0 ? '#a855f7' : '#7c3aed';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                // Subtle screen-center glow
+                ctx.save();
+                ctx.globalAlpha = 0.03 * t;
+                const hg = ctx.createRadialGradient(cx, cy, 0, cx, cy, canvas.height * 0.4);
+                hg.addColorStop(0, '#a855f7');
+                hg.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = hg;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            if (biome.parallax === 'cosmic' && t > 0.3) {
+                // Cosmic Storm: multicolor lightning web
+                const cosmicColors = ['#f472b6', '#86efac', '#7dd3fc', '#fcd34d', '#c4b5fd'];
+                for (let web = 0; web < 5; web++) {
+                    const seed = web * 73.1 + now * 0.4;
+                    const sx = (Math.sin(seed) * 0.5 + 0.5) * canvas.width;
+                    const sy = (Math.cos(seed * 1.3) * 0.5 + 0.5) * canvas.height;
+                    ctx.save();
+                    ctx.globalAlpha = (0.05 + Math.sin(now * 2 + web) * 0.02) * t;
+                    ctx.strokeStyle = cosmicColors[web % cosmicColors.length];
+                    ctx.lineWidth = 0.8;
+                    ctx.beginPath();
+                    let wx = sx, wy = sy;
+                    ctx.moveTo(wx, wy);
+                    for (let seg = 0; seg < 8; seg++) {
+                        wx += Math.sin(seed + seg * 1.9 + now) * 95;
+                        wy += Math.cos(seed + seg * 2.3 + now) * 70;
+                        ctx.lineTo(wx, wy);
+                    }
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                // Random screen flash
+                if (Math.sin(now * 11) > 0.95) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.035 * t;
+                    ctx.fillStyle = cosmicColors[Math.floor(now * 5) % cosmicColors.length];
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.restore();
+                }
+            }
+
+            if (biome.parallax === 'ascension' && t > 0.3) {
+                // Void Ascension: white grid perspective fading to vanishing point
+                const vx = canvas.width * 0.5, vy = canvas.height * 0.5;
+                const gridLines = 10;
+                const speed = now * 0.5;
+                ctx.save();
+                ctx.globalAlpha = 0.06 * t;
+                ctx.strokeStyle = '#f8fafc';
+                ctx.lineWidth = 0.5;
+                for (let i = -gridLines; i <= gridLines; i++) {
+                    const xOff = (i / gridLines) * canvas.width * 0.6;
+                    ctx.beginPath();
+                    ctx.moveTo(vx + xOff, vy);
+                    ctx.lineTo(vx + xOff * 3, canvas.height + 50);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(vx + xOff, vy);
+                    ctx.lineTo(vx + xOff * 3, -50);
+                    ctx.stroke();
+                }
+                for (let j = 1; j <= 6; j++) {
+                    const yFrac = ((j / 6) + (speed % (1 / 6)) * 6 % 1);
+                    const yTop = vy - yFrac * (vy + 50);
+                    const yBot = vy + yFrac * (vy + 50);
+                    const wFrac = yFrac * canvas.width * 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(vx - wFrac, yTop);
+                    ctx.lineTo(vx + wFrac, yTop);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(vx - wFrac, yBot);
+                    ctx.lineTo(vx + wFrac, yBot);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // --- Stars ---
+            stars.forEach(s => {
+                if (moving) {
+                    s.x -= s.speed * actualSpeed;
+                    if (s.x < 0) {
+                        s.x = canvas.width;
+                        s.y = Math.random() * canvas.height;
+                        s.color = biome.starColors[Math.floor(Math.random() * biome.starColors.length)];
+                    }
+                    s.twinkle += 0.03;
+                }
+                ctx.fillStyle = s.color;
+                ctx.globalAlpha = (s.size === 2 ? 0.85 : 0.40) * (0.55 + 0.45 * Math.sin(s.twinkle));
+                ctx.fillRect(s.x, s.y, s.size, s.size);
+            });
+            ctx.globalAlpha = 1;
+            bgAsteroids.forEach(b => drawRock(b));
+        }
+
+        function triggerGameOver() {
+            if (gameState === 'GAMEOVER') return;
+            gameState = 'GAMEOVER';
+            pauseOverlay.classList.add('hidden');
+            stopBiomeMusic(0.6);
+            createExplosion(ship.x, ship.y, 50);
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            const deathFreqs = [[150, 80], [200, 120], [100, 60], [70, 40]];
+            const df = deathFreqs[selectedShipType];
+            playSound(df[0], 'sawtooth', 0.4, 0.2);
+            playSound(df[1], 'sawtooth', 0.8, 0.2);
+            if (score > highscore) {
+                highscore = score;
+                localStorage.setItem('voidRunnerV7', highscore);
+                highscoreEl.innerText = highscore;
+            }
+            finalScoreEl.innerText = score + 'm';
+            finalSectorEl.innerText = currentSector;
+            setTimeout(() => { if (gameState === 'GAMEOVER') gameOverScreen.classList.remove('hidden'); }, 600);
+        }
+
+        function resetGame() {
+            distanceTraveled = 0; score = 0; scoreEl.innerText = 0;
+            worldSpeed = 2.5; speedMultiplier = 1; nitroAmount = 100;
+            distanceTimer = 400; spawnPatternCounter = 0;
+            asteroids.length = 0; bgAsteroids.length = 0; particles.length = 0;
+            powerUps.length = 0;
+            laserConnectors.length = 0;
+            ionZones.length = 0;
+            lightningStreaks.length = 0;
+            lightningTimer = 0;
+
+            // Reset effects
+            effects.shield = false; effects.shieldTimer = 0; effects.shieldFlashTimer = 0;
+            effects.corridorReady = false; effects.corridorClear = false;
+            effects.corridorTimer = 0; effects.corridorCooldown = 0;
+            effects.ionActive = false;
+
+            shieldHud.classList.add('hidden');
+            corridorHud.classList.add('hidden');
+            updateFieldButtonState();
+
+            // Reset sector & biome
+            currentSector = 1; lastSector = 0; sectorTransitionTimer = 0;
+            sectorNumEl.innerText = '1';
+            sectorOverlay.style.opacity = '0';
+            currentBiomeIdx = 0; prevBiomeIdx = 0; biomeTransitionProgress = 1.0;
+            // Reset star colors for Deep Void
+            stars.forEach(s => { s.color = BIOMES[0].starColors[Math.floor(Math.random() * BIOMES[0].starColors.length)]; });
+
+            safeY = canvas.height / 2;
+            ship.x = window.innerWidth < 768 ? 90 : 160;
+            ship.y = canvas.height / 2;
+            ship.vy = 0; ship.rotation = 0; ship.bobPhase = 0; ship.trailTimer = 0;
+            gameState = 'PLAYING';
+            gameOverScreen.classList.add('hidden');
+            menuEl.classList.add('hidden');
+            pauseOverlay.classList.add('hidden');
+
+            // Start biome music if audio is ready
+            if (audioCtx) {
+                bgMusicCurrentBiome = -1; // Force restart
+                playBiomeMusic(0);
+            }
+        }
+
+        function loop(time) {
+            lastTime = time;
+            drawBackground();
+
+            if (gameState === 'PLAYING') {
+                ship.update();
+                updateSector();
+                updatePowerUps();
+                updateAsteroids();
+                updateHazards();
+                updateParticles();
+            } else if (gameState === 'GAMEOVER') {
+                updateParticles();
+            }
+
+            // Draw order: ion zones (bg) -> corridor effect -> asteroids -> hazards -> power-ups -> particles -> ship
+            drawCorridorFieldEffect();
+            asteroids.forEach(a => drawRock(a));
+            drawHazards();
+            drawPowerUps();
+
+            particles.forEach(p => {
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+            });
+            ctx.globalAlpha = 1;
+
+            if (gameState === 'PLAYING' || gameState === 'MENU' || gameState === 'PAUSED') {
+                drawShieldAura();
+                ship.draw();
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        // ---- EVENT LISTENERS ----
+        pauseBtn.addEventListener('click', () => {
+            if (gameState === 'PLAYING' || gameState === 'PAUSED') togglePause();
+        });
+
+        soundBtn.addEventListener('click', () => {
+            toggleMute();
+        });
+
+        fieldBtn.addEventListener('click', () => {
+            if (gameState === 'PLAYING') activateCorridorClear();
+        });
+
+        document.getElementById('resume-btn').addEventListener('click', () => {
+            if (gameState === 'PAUSED') togglePause();
+        });
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initAudio();
+            // Create bgMusicGainNode now that audioCtx exists
+            if (!bgMusicGainNode) {
+                bgMusicGainNode = audioCtx.createGain();
+                bgMusicGainNode.gain.value = isMuted ? 0 : 0.8;
+                bgMusicGainNode.connect(audioCtx.destination);
+            }
+            resetGame();
+        });
+        document.getElementById('retry-btn').addEventListener('click', () => { resetGame(); });
+        requestAnimationFrame(loop);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#030305" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>VoidRunner</title>
+  </head>
+  <body>
+    <main id="game-root" aria-label="VoidRunner game">
+      <canvas id="game-canvas"></canvas>
+      <section id="hud" class="hud hidden" aria-live="polite">
+        <div class="hud-block">DIST: <span id="score">0</span>m<div class="sector">SECTOR <span id="sector">1</span></div></div>
+        <div class="hud-actions"><button id="field-button" class="hud-button" type="button">FIELD [F]</button><button id="pause-button" class="hud-button" type="button">PAUSE [P]</button></div>
+        <div class="hud-block right">BEST: <span id="best">0</span>m<button id="sound-button" class="hud-button" type="button">SOUND: ON [M]</button></div>
+      </section>
+      <div id="nitro" class="meter hidden"><label>THRUST CAPACITOR</label><div class="meter-track"><i id="nitro-fill"></i></div></div>
+      <div id="ability-hud" class="ability-stack hidden"><div id="shield-meter" class="ability cyan"><b>◆ SHIELD</b><i></i></div><div id="corridor-meter" class="ability green"><b>◈ CLEAR FIELD</b><i></i></div></div>
+      <div id="touch-controls" class="touch-controls hidden"><button id="field-touch" type="button">◈<small>FIELD</small></button><button id="pause-touch" type="button">Ⅱ<small>PAUSE</small></button></div>
+      <div id="sector-overlay" class="sector-overlay hidden"><b id="sector-title">SECTOR 1</b><span id="sector-subtitle">DEEP VOID</span></div>
+      <div id="rotate-overlay" class="overlay hidden"><h2>ROTATE DEVICE</h2><p>VOIDRUNNER REQUIRES LANDSCAPE</p></div>
+      <div id="menu" class="panel">
+        <h1>VOID<span>RUNNER</span></h1><p class="subtitle">TACTICAL ASTEROID EVASION</p>
+        <div id="ship-selector" class="ship-selector"></div><p id="ship-description" class="ship-description"></p>
+        <button id="start-button" class="primary" type="button">ENGAGE</button>
+        <p class="controls">[SPACE / TAP LEFT] THRUST<br>[SHIFT / TAP RIGHT] NITRO BOOST<br>[F] CLEAR FIELD &nbsp; [P] PAUSE &nbsp; [M] SOUND</p>
+      </div>
+      <div id="game-over" class="panel hidden"><h1>HULL <span>BREACH</span></h1><p class="subtitle">CRITICAL FAILURE DETECTED</p><div class="stat"><span>DISTANCE CLEARED:</span><b id="final-score">0m</b></div><div class="stat"><span>SECTOR REACHED:</span><b id="final-sector">1</b></div><button id="retry-button" class="primary" type="button">RE-ENGAGE</button></div>
+      <div id="pause-overlay" class="panel hidden"><h1>VOID<span>PAUSED</span></h1><p class="subtitle">RESUME OPERATIONS</p><button id="resume-button" class="primary" type="button">RESUME</button></div>
+      <pre id="debug-overlay" class="debug hidden"></pre>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

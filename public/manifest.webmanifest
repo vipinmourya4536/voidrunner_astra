@@ -1,0 +1,10 @@
+{
+  "name": "VoidRunner",
+  "short_name": "VoidRunner",
+  "start_url": ".",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#030305",
+  "theme_color": "#030305",
+  "icons": []
+}
