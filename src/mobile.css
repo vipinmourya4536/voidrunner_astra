@@ -1,0 +1,24 @@
+/* Mobile-first overrides kept separate from the compact base stylesheet. */
+.ship-selector { grid-template-columns: repeat(5, 1fr); }
+.ship-button.selected, .difficulty-button.selected { color: #fff; border-color: #0ea5e9; background: #0ea5e926; box-shadow: 0 0 15px #0ea5e94d; }
+.difficulty-selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; }
+.difficulty-button { min-height: 38px; padding: 6px 4px; background: #03030588; border: 1px solid #ffffff26; color: #94a3b8; font: inherit; font-size: .64rem; letter-spacing: .5px; }
+.difficulty-description { min-height: 18px; margin: 0 0 16px; color: #fbbf24; font-size: .65rem; letter-spacing: 1px; }
+.primary, .secondary { width: 100%; padding: 15px 20px; border: 1px solid #0ea5e9; background: #0ea5e9; color: #021014; font-weight: 700; letter-spacing: 2px; cursor: pointer; }
+.primary:hover { background: #22d3ee; box-shadow: 0 0 15px #0ea5e9; }
+.secondary { margin-top: 8px; background: transparent; color: #94a3b8; border-color: #475569; font-size: .72rem; padding: 10px; }
+
+/* Desktop keeps the compact top controls; touch gets one Field and one Pause target. */
+@media (pointer: fine) {
+  .touch-controls { display: none !important; }
+}
+
+@media (pointer: coarse) {
+  .hud-actions #field-button, .touch-controls #pause-touch { display: none; }
+  .hud-button, .touch-controls button { min-width: 58px; min-height: 58px; touch-action: manipulation; }
+}
+
+@media (orientation: portrait) and (max-width: 720px) {
+  .ship-selector { grid-template-columns: repeat(2, 1fr); }
+  .difficulty-selector { grid-template-columns: repeat(2, 1fr); }
+}

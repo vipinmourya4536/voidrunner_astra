@@ -23,11 +23,13 @@
       <div id="rotate-overlay" class="overlay hidden"><h2>ROTATE DEVICE</h2><p>VOIDRUNNER REQUIRES LANDSCAPE</p></div>
       <div id="menu" class="panel">
         <h1>VOID<span>RUNNER</span></h1><p class="subtitle">TACTICAL ASTEROID EVASION</p>
+        <div class="hangar-preview" aria-live="polite"><canvas id="hangar-preview" width="192" height="112" aria-label="Selected playable pixel-art preview"></canvas><div class="hangar-preview-copy"><span>ACTIVE LOADOUT</span><b id="hangar-preview-name">PIONEER</b><small id="hangar-preview-kind">SPACECRAFT</small></div></div>
         <div id="ship-selector" class="ship-selector"></div><p id="ship-description" class="ship-description"></p>
+        <div id="difficulty-selector" class="difficulty-selector" aria-label="Difficulty"></div><p id="difficulty-description" class="difficulty-description"></p>
         <button id="start-button" class="primary" type="button">ENGAGE</button>
         <p class="controls">[SPACE / TAP LEFT] THRUST<br>[SHIFT / TAP RIGHT] NITRO BOOST<br>[F] CLEAR FIELD &nbsp; [P] PAUSE &nbsp; [M] SOUND</p>
       </div>
-      <div id="game-over" class="panel hidden"><h1>HULL <span>BREACH</span></h1><p class="subtitle">CRITICAL FAILURE DETECTED</p><div class="stat"><span>DISTANCE CLEARED:</span><b id="final-score">0m</b></div><div class="stat"><span>SECTOR REACHED:</span><b id="final-sector">1</b></div><button id="retry-button" class="primary" type="button">RE-ENGAGE</button></div>
+      <div id="game-over" class="panel hidden"><h1>HULL <span>BREACH</span></h1><p class="subtitle">CRITICAL FAILURE DETECTED</p><div class="stat"><span>DISTANCE CLEARED:</span><b id="final-score">0m</b></div><div class="stat"><span>SECTOR REACHED:</span><b id="final-sector">1</b></div><div class="stat hidden" id="best-stat"><span>NEW PERSONAL BEST:</span><b id="final-best">0m</b></div><button id="retry-button" class="primary" type="button">RE-ENGAGE</button><button id="hangar-button" class="secondary" type="button">RETURN TO HANGAR</button></div>
       <div id="pause-overlay" class="panel hidden"><h1>VOID<span>PAUSED</span></h1><p class="subtitle">RESUME OPERATIONS</p><button id="resume-button" class="primary" type="button">RESUME</button></div>
       <pre id="debug-overlay" class="debug hidden"></pre>
     </main>

@@ -139,7 +139,7 @@ describe('canonical procedural score parity', () => {
 });
 
 describe('canonical ship and effect parity', () => {
-  it.each([0, 1, 2, 3])('matches source thrust and nitro randomness, types and envelopes for ship %i', ship => {
+  it.each([0, 1, 2])('matches source thrust and nitro randomness, types and envelopes for preserved ship %i', ship => {
     const ctx = new FakeContext();
     const math = Object.create(Math) as Math;
     math.random = audioRandom(92);
@@ -168,11 +168,12 @@ describe('canonical ship and effect parity', () => {
     expect(tuples(CORRIDOR_ACTIVATE)).toEqual([[300, 'sine', .2, .08, .01], [500, 'triangle', .15, .06, .01]]);
     expect(tuples(CORRIDOR_EXPIRE)).toEqual([[200, 'sine', .2, .04, .01]]);
     expect(tuples(sectorNotes(5))).toEqual([[550, 'sine', .3, .06, .01], [600, 'triangle', .2, .04, .01]]);
-    expect([0, 1, 2, 3].map(i => tuples(deathNotes(i)))).toEqual([
+    expect([0, 1, 2, 3, 4].map(i => tuples(deathNotes(i)))).toEqual([
       [[150, 'sawtooth', .4, .2, .01], [80, 'sawtooth', .8, .2, .01]],
       [[200, 'sawtooth', .4, .2, .01], [120, 'sawtooth', .8, .2, .01]],
       [[100, 'sawtooth', .4, .2, .01], [60, 'sawtooth', .8, .2, .01]],
-      [[70, 'sawtooth', .4, .2, .01], [40, 'sawtooth', .8, .2, .01]],
+      [[260, 'sawtooth', .4, .2, .01], [130, 'sawtooth', .8, .2, .01]],
+      [[170, 'sawtooth', .4, .2, .01], [90, 'sawtooth', .8, .2, .01]],
     ]);
   });
 });
@@ -327,7 +328,7 @@ describe('audio lifecycle and bounded scheduling', () => {
   it('supports source per-ship fixed-step thrust cadence and nitro cadence', () => {
     const { audio, ctx } = setup();
     audio.stop(0);
-    for (let ship = 0; ship < 4; ship++) {
+    for (let ship = 0; ship < 5; ship++) {
       const offset = ctx.oscillators.length;
       for (let frame = 1; frame <= 36; frame++) audio.thrust(ship, frame);
       const primary = tones(ctx.oscillators.slice(offset)).filter(n => n.volume === SHIP_SOUNDS[ship].vol);

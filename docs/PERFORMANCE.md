@@ -11,3 +11,5 @@
 ## Test matrix
 
 Use `npm run build`, `npm test`, and a production preview on low/mid/high Android hardware at 60/90/120 Hz and 720p/1080p-class logical displays. Compare gameplay counters and seeded runs, not only visual FPS. Capture FPS, frame time, internal render scale, active asteroids, hazards and particles with `?debug=1`.
+
+The repository workflow produces `voidrunner-debug-apk` for direct installation. The AAB artifact is intentionally unsigned; release signing credentials are not stored in the repository.

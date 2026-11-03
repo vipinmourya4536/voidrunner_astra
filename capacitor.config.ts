@@ -7,7 +7,9 @@ const config: CapacitorConfig = {
   bundledWebRuntime: false,
   android: { allowMixedContent: false },
   plugins: {
-    StatusBar: { overlaysWebView: true, style: 'DARK' },
+    // Native immersive mode owns the system bars. Keeping the WebView below a
+    // transient bar prevents it from jumping over essential HUD controls.
+    StatusBar: { overlaysWebView: false, style: 'DARK' },
     Keyboard: { resize: 'none' }
   }
 };

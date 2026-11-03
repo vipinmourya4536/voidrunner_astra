@@ -1,15 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { biomeForSector, biomeIndexForSector } from '../src/data/biomes';
-import { SHIPS } from '../src/data/ships';
+import { SHIPS, shipArt } from '../src/data/ships';
 import { SectorManager } from '../src/world/SectorManager';
 import { pointToSegmentDistanceSquared } from '../src/core/math';
 import { Ship, shipRockCollision } from '../src/player/Ship';
+import { DIFFICULTIES } from '../src/data/difficulty';
 
-describe('VoidRunner source parity data',()=>{
-  it('keeps all four source ships and exact physics constants',()=>{
-    expect(SHIPS.map(s=>s.name)).toEqual(['PIONEER','APEX','SAUCER','TITAN']);
-    expect(SHIPS.map(s=>[s.gravity,s.thrust,s.maxSpeed,s.worldSpeedMod,s.dampening])).toEqual([[.21,-.44,6.5,1,.978],[.27,-.56,8,1.25,.955],[.1,-.22,4.5,.95,.985],[.4,-.72,9,.65,.96]]);
+describe('VoidRunner configuration',()=>{
+  it('keeps the three baseline ships, removes Titan, and exposes two valid new roles',()=>{
+    expect(SHIPS.slice(0,5).map(s=>s.name)).toEqual(['PIONEER','APEX','SAUCER','WRAITH','HELIX']);
+    expect(SHIPS.some(s=>s.name==='TITAN')).toBe(false);
+    expect(SHIPS.every(s=>s.gravity>0&&s.thrust<0&&s.maxSpeed>0&&shipArt(s).length>0)).toBe(true);
+    expect(SHIPS.find(s=>s.name==='HELIX')!.fieldDurationMultiplier).toBeGreaterThan(1);
+    expect(SHIPS.find(s=>s.name==='HELIX')!.fieldCooldownMultiplier).toBeLessThan(1);
     expect(SHIPS[2]!.bounce).toBe(true);
+  });
+  it('keeps difficulty modes ordered by pressure while preserving a standard default',()=>{
+    expect(DIFFICULTIES.map(d=>d.name)).toEqual(['CADET','STANDARD','VETERAN','NIGHTMARE']);
+    expect(DIFFICULTIES[0]!.safeCorridor).toBeGreaterThan(DIFFICULTIES[1]!.safeCorridor);
+    expect(DIFFICULTIES[3]!.density).toBeGreaterThan(DIFFICULTIES[1]!.density);
   });
   it('maps all source biome ranges without collapsing stages',()=>{
     expect(biomeIndexForSector(1)).toBe(0);expect(biomeForSector(3).name).toBe('NEBULA DRIFT');expect(biomeForSector(25).name).toBe('VOID ASCENSION');

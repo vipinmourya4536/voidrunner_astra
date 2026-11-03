@@ -8,11 +8,15 @@ export const SHIP_SOUNDS: readonly ShipSound[] = [
   { freq: 240, range: 50, type: 'sine', dur: .07, vol: .025, rate: 6, freq2: 350, type2: 'sine' },
   { freq: 420, range: 80, type: 'sawtooth', dur: .035, vol: .016, rate: 4, freq2: 630, type2: 'sawtooth' },
   { freq: 130, range: 50, type: 'triangle', dur: .12, vol: .03, rate: 9, freq2: 195, type2: 'sine' },
-  { freq: 58, range: 18, type: 'square', dur: .09, vol: .03, rate: 3, freq2: 88, type2: 'square' },
+  { freq: 360, range: 55, type: 'triangle', dur: .045, vol: .022, rate: 4, freq2: 620, type2: 'sine' },
+  { freq: 190, range: 36, type: 'sine', dur: .09, vol: .026, rate: 6, freq2: 380, type2: 'triangle' },
+  { freq: 170, range: 28, type: 'triangle', dur: .08, vol: .022, rate: 7, freq2: 230, type2: 'sine' },
+  { freq: 310, range: 34, type: 'sine', dur: .07, vol: .020, rate: 7, freq2: 510, type2: 'triangle' },
+  { freq: 440, range: 48, type: 'sawtooth', dur: .045, vol: .018, rate: 5, freq2: 670, type2: 'sine' },
 ];
 const NITRO: [number, OscillatorType, number, number][] = [
   [500, 'sine', .04, .015], [800, 'sawtooth', .03, .012],
-  [250, 'triangle', .06, .02], [120, 'square', .05, .02],
+  [250, 'triangle', .06, .02], [620, 'sine', .04, .018], [340, 'triangle', .06, .022], [180, 'triangle', .08, .02], [700, 'sine', .05, .018], [520, 'sawtooth', .045, .016],
 ];
 
 export const effectTone = (frequency: number, type: OscillatorType, duration: number, volume = .1): Tone =>
@@ -37,7 +41,7 @@ export function pickupNotes(kind: 'shield' | 'corridor'): Tone[] {
 }
 
 export function deathNotes(ship: number): Tone[] {
-  const [a, b] = [[150, 80], [200, 120], [100, 60], [70, 40]][ship] ?? [150, 80];
+  const [a, b] = [[150, 80], [200, 120], [100, 60], [260, 130], [170, 90], [120, 70], [210, 110], [270, 140]][ship] ?? [150, 80];
   return [effectTone(a, 'sawtooth', .4, .2), effectTone(b, 'sawtooth', .8, .2)];
 }
 

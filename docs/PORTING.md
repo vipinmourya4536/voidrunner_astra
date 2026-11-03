@@ -5,7 +5,7 @@ The immutable source of truth is `reference/ship.html`, copied from the supplied
 ## Source inventory
 
 - **UI/state:** `MENU`, `PLAYING`, `PAUSED`, and `GAMEOVER`; ship selector; HUD; field, pause, sound, retry and resume controls; local high score `voidRunnerV7`.
-- **Ships:** PIONEER, APEX, SAUCER, TITAN with source physics, exhaust placement/colors, tilt, dimensions and pixel-art strings in `src/data/ships.ts`.
+- **Ships:** PIONEER, APEX, SAUCER, WRAITH and HELIX, plus the selectable special-operative character loadouts, with data-driven physics, exhaust placement/colors, tilt, dimensions and pixel-art strings in `src/data/ships.ts`. TITAN is removed from the playable roster.
 - **Simulation:** frame-oriented gravity/thrust/dampening/clamp; world speed starts at `2.5`; Nitro is `2x`, drains `0.6` and regenerates `0.15` per source frame; distance is `speed * 0.1`.
 - **Progression:** sector distance `500`; density `1 + (sector - 1) * .12`; spawn reduction floors at `.6`; all 13 source biome ranges are preserved.
 - **Spawning:** moving safe corridor, eight source patterns, shield/corridor probabilities, background rocks, and sector-gated laser, rotating-arm and ion hazards.

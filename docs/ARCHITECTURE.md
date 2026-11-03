@@ -19,4 +19,4 @@ src/
 
 Simulation owns all state mutation. Rendering consumes state only. All timers which affect gameplay are logical 60 Hz counters. Browser time is used only by the fixed-step accumulator. Random world generation uses independent seeded streams; hot rendering paths do not call `Math.random()`.
 
-The Android shell is Capacitor. `npm run cap:sync` builds the offline web bundle and copies it into the native project; no CDN or server is required at runtime.
+The Android shell is Capacitor. `npm run cap:sync` builds the offline web bundle and copies it into the native project; no CDN or server is required at runtime. `.github/workflows/android.yml` builds a debug APK and unsigned release AAB on Java 17 for device testing and later signing.

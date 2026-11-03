@@ -1,4 +1,5 @@
 import './style.css';
+import './mobile.css';
 import { Game } from './core/Game';
 
 const canvas=document.getElementById('game-canvas') as HTMLCanvasElement;

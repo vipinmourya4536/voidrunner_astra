@@ -1,6 +1,6 @@
 import type { Asteroid } from '../entities/Asteroid';
 import { BIOMES, type Biome } from '../data/biomes';
-import { SHIPS, parseShipArt, type ShipPixel } from '../data/ships';
+import { SHIPS, parseShipArt, shipArt, type ShipPixel } from '../data/ships';
 import { Rng } from '../core/rng';
 
 export type TextureRegion = { u0:number; v0:number; u1:number; v1:number; width:number; height:number; radius?:number };
@@ -40,7 +40,7 @@ export class TextureCache {
       for (let b = 0; b < BIOMES.length; b++) this.rocks[b][0][bucket] = backgrounds;
     }
     SHIPS.forEach((ship, index) => {
-      const art = parseShipArt(ship.art, ship.pixelSize);
+      const art = parseShipArt(shipArt(ship), ship.pixelSize);
       const c = document.createElement('canvas');
       // Exactly one texel per source design pixel, never rounded logical pixel positions.
       c.width = Math.round(art.width / art.pixelSize); c.height = Math.round(art.height / art.pixelSize);

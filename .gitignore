@@ -7,3 +7,46 @@ android/capacitor-cordova-android-plugins/build/
 *.iml
 .idea/
 .DS_Store
+
+# Dependencies
+node_modules/
+
+# Vite build output
+dist/
+
+# Android Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+
+# Android local configuration
+android/local.properties
+
+# Capacitor generated files
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# Generated Android packages
+*.apk
+*.aab
+*.ap_
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Android signing credentials
+*.jks
+*.keystore
+keystore.properties
+
+# IDE files
+*.iml
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
